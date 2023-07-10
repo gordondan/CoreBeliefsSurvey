@@ -1,0 +1,10 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs/CoreBeliefsSurvey
+/Client/bin/Debug/net7.0
+/Client/obj
+/Server/obj
+/Shared/bin/Debug/net7.0
+/Shared/obj
