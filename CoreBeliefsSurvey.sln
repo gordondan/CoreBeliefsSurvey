@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreBeliefsSurvey.Client", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreBeliefsSurvey.Shared", "Shared\CoreBeliefsSurvey.Shared.csproj", "{0C563914-F640-40FF-B182-12AAEF9C4375}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreBeliefsSurvey.Server", "Server\CoreBeliefsSurvey.Server.csproj", "{66AEB709-3D02-479D-BD74-657680B03B59}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{0C563914-F640-40FF-B182-12AAEF9C4375}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0C563914-F640-40FF-B182-12AAEF9C4375}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0C563914-F640-40FF-B182-12AAEF9C4375}.Release|Any CPU.Build.0 = Release|Any CPU
+		{66AEB709-3D02-479D-BD74-657680B03B59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66AEB709-3D02-479D-BD74-657680B03B59}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66AEB709-3D02-479D-BD74-657680B03B59}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66AEB709-3D02-479D-BD74-657680B03B59}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

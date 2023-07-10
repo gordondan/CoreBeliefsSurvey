@@ -1,5 +1,4 @@
-﻿
-using CoreBeliefsSurvey.Client;
+﻿using CoreBeliefsSurvey.Client;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,4 +13,3 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddTelerikBlazor();
 
 await builder.Build().RunAsync();
-
