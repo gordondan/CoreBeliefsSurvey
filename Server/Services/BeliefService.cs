@@ -65,7 +65,7 @@ namespace CoreBeliefsSurvey.Server.Services
 
         public async Task<List<CoreBelief>> DownloadBeliefs()
         {
-            var tableClient = new TableClient(connectionString, tableName);
+            var tableClient = new TableClient(connectionString, "Beliefs");
 
             List<CoreBelief> beliefs = new List<CoreBelief>();
 

@@ -1,4 +1,5 @@
-﻿using CoreBeliefsSurvey.Server.Services;
+﻿using CoreBeliefsSurvey.Server.Models;
+using CoreBeliefsSurvey.Server.Services;
 using CoreBeliefsSurvey.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -25,7 +26,7 @@ namespace CoreBeliefsSurvey.Server.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> UploadBeliefs([FromBody] List<CoreBelief> beliefs, [FromQuery] bool preventDuplicates = true)
+        public async Task<ActionResult> UploadBeliefs([FromBody] List<CoreBeliefEntity> beliefs, [FromQuery] bool preventDuplicates = true)
         {
             await _beliefService.UploadBeliefs(beliefs, preventDuplicates);
             return Ok();
