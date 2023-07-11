@@ -1,33 +1,34 @@
 ﻿@page "/"
 @using CoreBeliefsSurvey.Shared.Models
-@using Telerik.Blazor.Components
 @using Microsoft.AspNetCore.Components
 @inject HttpClient Http
 @inject NavigationManager NavManager
 
-@using Microsoft.AspNetCore.Components
-
 @if (!loadingBeliefs){
-<TelerikComboBox Data="@numberOfQuestionsOptions"
-                 Value="@selectedOption"
-                 ValueChanged="EventCallback.Factory.Create<int?>(this, OnSelectedOptionChanged)"
-                 Placeholder="Select number of questions"
-                 ClearButton="true">
-</TelerikComboBox>
+    @if (string.IsNullOrEmpty(selectedOption))
+    {
+        <p>How many questions would you like to answer?</p>
+        <TelerikButtonGroup SelectionMode="@ButtonGroupSelectionMode.Single">
+        <ButtonGroupToggleButton @onclick="() => BeliefNumberSelected(5)">5</ButtonGroupToggleButton>
+        <ButtonGroupToggleButton @onclick="() => BeliefNumberSelected(10)">10</ButtonGroupToggleButton>
+        <ButtonGroupToggleButton @onclick="() => BeliefNumberSelected(10)">25</ButtonGroupToggleButton>
+        <ButtonGroupToggleButton @onclick="() => BeliefNumberSelected(10)">50</ButtonGroupToggleButton>
+    <ButtonGroupToggleButton @onclick="() => BeliefNumberSelected(-1)">All</ButtonGroupToggleButton>
+</TelerikButtonGroup>}
 }
-
 @if (loadingBeliefs)
 {
     <p><em>Loading...</em></p>
 }
-else if (selectedOption.HasValue)
+else if (selectedOption != null)
 {
     <h3>Beliefs</h3>
 
     <div class="belief-container">
         @foreach (var belief in filteredBeliefs)
         {
-            <BeliefCard Belief="@belief" OnOptionSelected="OnOptionSelected" />
+            <BeliefCard Belief="@belief" OnOptionSelected="(option) => HandleOptionSelected(option)" SelectedOption="beliefResponses.ContainsKey(belief) ? beliefResponses[belief].SelectedValue : 0" />
+
         }
     </div>
 
@@ -39,13 +40,15 @@ else if (selectedOption.HasValue)
 @code {
     private CoreBelief[] allBeliefs;
     private CoreBelief[] filteredBeliefs;
-    private int? selectedOption;
+    private string selectedOption;
     private int questionsAnswered = 0;
     private bool loadingBeliefs = true;
-    private List<int?> numberOfQuestionsOptions = new List<int?> { 5, 10, 25, 50, null };  // Use null for 'All' option
+    private List<string> numberOfQuestionsOptions = new List<string> { "5", "10", "25", "50", "All" };
+    private Dictionary<CoreBelief, CoreBeliefResponse> beliefResponses;
 
     protected override async Task OnInitializedAsync()
     {
+        beliefResponses = new Dictionary<CoreBelief, CoreBeliefResponse>();
         await LoadBeliefs();
     }
 
@@ -53,28 +56,60 @@ else if (selectedOption.HasValue)
     {
         allBeliefs = await Http.GetFromJsonAsync<CoreBelief[]>("api/Beliefs");
         loadingBeliefs = false;
-        FilterBeliefs();
     }
 
     private void FilterBeliefs()
     {
         var random = new Random();
         var randomizedBeliefs = allBeliefs.OrderBy(x => random.Next()).ToArray();
-        filteredBeliefs = selectedOption.HasValue ? randomizedBeliefs.Take(selectedOption.Value).ToArray() : randomizedBeliefs;
+        selectedOption = selectedOption ?? "All";
+        filteredBeliefs = selectedOption == "All" ? randomizedBeliefs : randomizedBeliefs.Take(int.Parse(selectedOption)).ToArray();
         questionsAnswered = 0; // Reset the questions answered counter
     }
-
-    private async Task OnSelectedOptionChanged(int? value)
+    
+    private void HandleOptionSelected((CoreBelief Belief, int SelectedValue) option)
     {
-        selectedOption = value;
-        FilterBeliefs();
-        await Task.CompletedTask;
+        UpdateBeliefResponse(option.Belief, option.SelectedValue);
     }
 
-    private void OnOptionSelected()
+    private void BeliefNumberSelected(int value)
     {
-        questionsAnswered++;
-        StateHasChanged(); // Update the UI after answering a question
+        questionsAnswered = 0;
+        if (value < 0)
+        {
+            selectedOption = "All";
+        }
+        else
+        {
+            selectedOption = value.ToString();
+        }
+        FilterBeliefs();
+    }
+
+    public void UpdateBeliefResponse(CoreBelief belief, int selectedValue)
+    {
+        if (beliefResponses.ContainsKey(belief))
+        {
+            beliefResponses[belief].SelectedValue = selectedValue;
+        }
+        else
+        {
+            var beliefResponse = new CoreBeliefResponse
+                {
+                    Belief = belief,
+                    SelectedValue = selectedValue
+                };
+            beliefResponses.Add(belief, beliefResponse);
+        }
+    }
+
+    public CoreBeliefResponse GetBeliefResponse(CoreBelief belief)
+    {
+        if (beliefResponses.ContainsKey(belief))
+        {
+            return beliefResponses[belief];
+        }
+        return null;
     }
 
     private void NavigateToSummary()
