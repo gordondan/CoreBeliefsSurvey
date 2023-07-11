@@ -9,3 +9,5 @@
 /Shared/bin/Debug/net7.0
 /Shared/obj
 /CoreBeliefsSurvey.Console/obj
+/CoreBeliefsSurvey.Console/bin/Debug/net7.0
+/Server/bin/Debug/net7.0
