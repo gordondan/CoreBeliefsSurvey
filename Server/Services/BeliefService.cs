@@ -90,11 +90,13 @@ namespace CoreBeliefsSurvey.Server.Services
             using (var reader = new StreamReader(path))
             using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
             {
-                // Get records from CSV file
+                csv.Context.RegisterClassMap<CoreBeliefEntityMap>();
                 beliefs = csv.GetRecords<CoreBeliefEntity>().ToList();
             }
 
             return beliefs;
         }
+
+
     }
 }

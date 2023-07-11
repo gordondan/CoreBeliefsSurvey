@@ -15,7 +15,7 @@ class Program
         // Build the configuration
         var configuration = new ConfigurationBuilder()
             .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-            .AddJsonFile("appsettings.json")
+            //.AddJsonFile("appsettings.json")
             .Build();
 
         // Set up the dependency injection
@@ -28,7 +28,7 @@ class Program
         var beliefService = serviceProvider.GetService<BeliefService>();
 
         // Retrieve the Azure Storage connection string from Azure Key Vault
-        var keyVaultUrl = "<Your Azure Key Vault URL>";
+        var keyVaultUrl = "https://core-beliefs-vault.vault.azure.net/";
         var connectionStringSecretName = "ConnectionString";
 
         var connectionString = await GetConnectionStringFromKeyVault(keyVaultUrl, connectionStringSecretName);
@@ -43,7 +43,7 @@ class Program
         configuration["ConnectionStrings:Default"] = connectionString;
 
         // Path to the CSV file
-        var path = "path_to_your_csv_file";
+        var path = "C:\\Users\\gordon\\source\\repos\\CoreBeliefsSurvey\\CoreBeliefsSurvey.Console\\CoreBeliefs.csv";
 
         // Read the beliefs from the CSV file
         var beliefs = beliefService.ReadBeliefsFromCSV(path);
