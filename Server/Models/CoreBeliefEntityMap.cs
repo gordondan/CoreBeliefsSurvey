@@ -9,7 +9,7 @@ namespace CoreBeliefsSurvey.Server.Models
         {
             Map(m => m.IsPositive).Convert(args =>
             {
-                var isPositiveStr = args.Row.GetField("Orientation");
+                var isPositiveStr = args.Row.GetField("Orientation").Trim();
                 return isPositiveStr.Equals("Positive", StringComparison.OrdinalIgnoreCase);
             });
 

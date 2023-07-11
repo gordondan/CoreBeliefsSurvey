@@ -1,0 +1,40 @@
+﻿@using Telerik.Blazor.Components
+
+<div class="likert-scale">
+    <TelerikRadioGroup Data="@likertOptions"
+    @bind-Value="@SelectedOption"
+                       ValueField="@nameof(LikertOption.OptionId)"
+                       TextField="@nameof(LikertOption.OptionText)">
+    </TelerikRadioGroup>
+</div>
+
+@code {
+    [Parameter]
+    public int SelectedOption { get; set; }
+
+    [Parameter]
+    public EventCallback<int> SelectedOptionChanged { get; set; }
+
+    private List<LikertOption> likertOptions = new List<LikertOption>
+    {
+        new LikertOption { OptionId = 1, OptionText = "Disagree" },
+        new LikertOption { OptionId = 2, OptionText = "Somewhat Disagree" },
+        new LikertOption { OptionId = 3, OptionText = "Neutral" },
+        new LikertOption { OptionId = 4, OptionText = "Somewhat Agree" },
+        new LikertOption { OptionId = 5, OptionText = "Agree" },
+    };
+
+    private class LikertOption
+    {
+        public int OptionId { get; set; }
+        public string OptionText { get; set; }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await SelectedOptionChanged.InvokeAsync(SelectedOption);
+        }
+    }
+}

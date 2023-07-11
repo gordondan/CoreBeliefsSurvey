@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreBeliefsSurvey.Shared", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreBeliefsSurvey.Server", "Server\CoreBeliefsSurvey.Server.csproj", "{66AEB709-3D02-479D-BD74-657680B03B59}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreBeliefsSurvey.Console", "CoreBeliefsSurvey.Console\CoreBeliefsSurvey.Console.csproj", "{422B86FE-9F27-4065-963E-660361C0646D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoreBeliefsSurvey.Console", "CoreBeliefsSurvey.Console\CoreBeliefsSurvey.Console.csproj", "{422B86FE-9F27-4065-963E-660361C0646D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

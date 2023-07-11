@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Azure;
 using System.Linq;
 using CoreBeliefsSurvey.Server.Models;
+using Microsoft.Extensions.Options;
 
 namespace CoreBeliefsSurvey.Server.Services
 {
@@ -17,11 +18,14 @@ namespace CoreBeliefsSurvey.Server.Services
     {
         private readonly string connectionString;
         private readonly string tableName;
+        
+        private readonly AppSettings _appSettings;
 
-        public BeliefService(IConfiguration configuration)
+        public BeliefService(AppSettings appSettings)
         {
-            connectionString = configuration.GetConnectionString("Default");
-            tableName = configuration["TableName"];
+            _appSettings = appSettings;
+            connectionString = _appSettings.DefaultConnectionString;
+            tableName = _appSettings.TableName;
         }
 
         public async Task UploadBeliefs(List<CoreBeliefEntity> beliefs, bool preventDuplicates = true)
@@ -39,7 +43,8 @@ namespace CoreBeliefsSurvey.Server.Services
                 TableEntity beliefEntity = new TableEntity(record.PartitionKey, record.RowKey)
                 {
                     { "Belief", record.BeliefName },
-                    { "Description", record.BeliefDescription }
+                    { "Description", record.BeliefDescription },
+                    {"IsPositive",record.IsPositive }
                 };
 
                 if (preventDuplicates)
@@ -74,14 +79,16 @@ namespace CoreBeliefsSurvey.Server.Services
                 CoreBelief belief = new CoreBelief()
                 {
                     BeliefName = response.GetString("Belief"),
-                    BeliefDescription = response.GetString("Description")
-                };
+                    BeliefDescription = response.GetString("Description"),
+                    IsPositive = response.GetBoolean("IsPositive") ?? false
+            };
 
                 beliefs.Add(belief);
             }
 
             return beliefs;
         }
+
 
         public List<CoreBeliefEntity> ReadBeliefsFromCSV(string path)
         {
@@ -97,6 +104,37 @@ namespace CoreBeliefsSurvey.Server.Services
             return beliefs;
         }
 
+        public async Task DeleteAllBeliefs()
+        {
+            var tableClient = new TableClient(connectionString, tableName);
+
+            await foreach (var entity in tableClient.QueryAsync<TableEntity>())
+            {
+                await tableClient.DeleteEntityAsync(entity.PartitionKey, entity.RowKey);
+            }
+        }
+
+        public List<CoreBeliefEntity> ReformatBeliefs(List<CoreBeliefEntity> beliefs)
+        {
+            List<CoreBeliefEntity> reformattedBeliefs = new List<CoreBeliefEntity>();
+
+            foreach (var belief in beliefs)
+            {
+                // Split the BeliefName into belief and description
+                string[] splitBelief = belief.BeliefName.Split(". ", 2);
+
+                // If the split resulted in two parts, update the BeliefName and BeliefDescription accordingly
+                if (splitBelief.Length == 2)
+                {
+                    belief.BeliefName = splitBelief[0].Trim();
+                    belief.BeliefDescription = splitBelief[1].Trim();
+                }
+
+                reformattedBeliefs.Add(belief);
+            }
+
+            return reformattedBeliefs;
+        }
 
     }
 }

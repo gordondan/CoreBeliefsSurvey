@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using CoreBeliefsSurvey.Server.Models;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
+using CoreBeliefsSurvey.Server;
 
 class Program
 {
@@ -15,17 +16,7 @@ class Program
         // Build the configuration
         var configuration = new ConfigurationBuilder()
             .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-            //.AddJsonFile("appsettings.json")
             .Build();
-
-        // Set up the dependency injection
-        var serviceProvider = new ServiceCollection()
-            .AddSingleton<IConfiguration>(configuration)
-            .AddSingleton<BeliefService>()
-            .BuildServiceProvider();
-
-        // Get the belief service from the service provider
-        var beliefService = serviceProvider.GetService<BeliefService>();
 
         // Retrieve the Azure Storage connection string from Azure Key Vault
         var keyVaultUrl = "https://core-beliefs-vault.vault.azure.net/";
@@ -39,15 +30,29 @@ class Program
             return;
         }
 
-        // Update the configuration with the retrieved connection string
-        configuration["ConnectionStrings:Default"] = connectionString;
+        // Create an instance of AppSettings
+        var appSettings = new AppSettings { DefaultConnectionString = connectionString, TableName = "Beliefs" };
+
+        // Set up the dependency injection
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton<IConfiguration>(configuration)
+            .AddSingleton(appSettings)  // Inject AppSettings
+            .AddSingleton<BeliefService>()
+            .BuildServiceProvider();
+
+        // Get the belief service from the service provider
+        var beliefService = serviceProvider.GetService<BeliefService>();
 
         // Path to the CSV file
         var path = "C:\\Users\\gordon\\source\\repos\\CoreBeliefsSurvey\\CoreBeliefsSurvey.Console\\CoreBeliefs.csv";
 
         // Read the beliefs from the CSV file
         var beliefs = beliefService.ReadBeliefsFromCSV(path);
+        beliefs = beliefService.ReformatBeliefs(beliefs);
+        beliefs = beliefs.Where(x=>!string.IsNullOrEmpty(x.BeliefName)).ToList();
 
+        //Clear the table
+        await beliefService.DeleteAllBeliefs();
         // Upload the beliefs to the table
         await beliefService.UploadBeliefs(beliefs);
     }
@@ -62,3 +67,4 @@ class Program
         return secret.Value?.Value;
     }
 }
+

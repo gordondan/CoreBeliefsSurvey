@@ -1,0 +1,22 @@
+﻿@using CoreBeliefsSurvey.Shared.Models
+@using Telerik.Blazor.Components
+
+<div class="belief-card @(Belief.IsPositive ? "positive" : "negative")">
+    <h4>@Belief.BeliefName</h4>
+    <p>@Belief.BeliefDescription</p>
+    <LikertScale SelectedOption="@SelectedOption" SelectedOptionChanged="@HandleSelectedOptionChanged" />
+    <div class="debug-info">IsPositive: @Belief.IsPositive</div>
+</div>
+
+@code {
+    [Parameter]
+    public CoreBelief Belief { get; set; }
+
+    private int SelectedOption { get; set; }
+
+    private async Task HandleSelectedOptionChanged(int value)
+    {
+        SelectedOption = value;
+        await Task.CompletedTask;
+    }
+}
