@@ -1,0 +1,25 @@
+﻿@page "/summary"
+@using CoreBeliefsSurvey.Shared.Models
+@inject NavigationManager NavManager
+
+<h3>Summary</h3>
+
+<p>Number of questions selected: @selectedOption</p>
+<!-- Display other relevant information from the user's selections -->
+
+<button class="btn btn-primary" @onclick="GoBack">Go Back</button>
+
+@code {
+    private int? selectedOption;
+
+    protected override void OnInitialized()
+    {
+        var uri = new Uri(NavManager.Uri);
+        
+    }
+
+    private void GoBack()
+    {
+        NavManager.NavigateTo("/");
+    }
+}

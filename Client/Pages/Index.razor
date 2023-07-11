@@ -1,29 +1,75 @@
 ﻿@page "/"
 @using CoreBeliefsSurvey.Shared.Models
 @using Telerik.Blazor.Components
+@using Microsoft.AspNetCore.Components
 @inject HttpClient Http
+@inject NavigationManager NavManager
 
-<h3>Beliefs</h3>
+@using Microsoft.AspNetCore.Components
 
-@if (beliefs == null)
+<TelerikComboBox Data="@numberOfQuestionsOptions"
+                 Value="@selectedOption"
+                 ValueChanged="EventCallback.Factory.Create<int?>(this, OnSelectedOptionChanged)"
+                 Placeholder="Select number of questions"
+                 ClearButton="true">
+</TelerikComboBox>
+
+
+@if (selectedOption.HasValue)
 {
-    <p><em>Loading...</em></p>
-}
-else
-{
-    <div class="belief-container">
-        @foreach (var belief in beliefs)
-        {
-            <BeliefCard Belief="@belief" />
-        }
-    </div>
+    <h3>Beliefs</h3>
+
+    @if (beliefs == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <div class="belief-container">
+            @foreach (var belief in beliefs)
+            {
+                <BeliefCard Belief="@belief" OnOptionSelected="OnOptionSelected" />
+            }
+        </div>
+
+        <p>Questions answered: @questionsAnswered of @beliefs.Length</p>
+
+        <button class="btn btn-primary" @onclick="NavigateToSummary">Submit</button>
+    }
 }
 
 @code {
     private CoreBelief[] beliefs;
+    private int? selectedOption;
+    private int questionsAnswered = 0;
+    private List<int?> numberOfQuestionsOptions = new List<int?> { 5, 10, 25, 50, null };  // Use null for 'All' option
 
     protected override async Task OnInitializedAsync()
     {
-        beliefs = await Http.GetFromJsonAsync<CoreBelief[]>("api/Beliefs");
+        await LoadBeliefs();
+    }
+
+    private async Task LoadBeliefs()
+    {
+        var allBeliefs = await Http.GetFromJsonAsync<CoreBelief[]>("api/Beliefs");
+        var random = new Random();
+        var randomizedBeliefs = allBeliefs.OrderBy(x => random.Next()).ToArray();
+        beliefs = selectedOption.HasValue ? randomizedBeliefs.Take(selectedOption.Value).ToArray() : randomizedBeliefs;
+    }
+
+    private async Task OnSelectedOptionChanged(int? value)
+    {
+        selectedOption = value;
+        await LoadBeliefs();
+    }
+
+    private void OnOptionSelected()
+    {
+        questionsAnswered++;
+    }
+
+    private void NavigateToSummary()
+    {
+        NavManager.NavigateTo("/summary");
     }
 }
