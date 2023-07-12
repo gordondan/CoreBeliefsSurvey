@@ -1,35 +1,106 @@
 ﻿@page "/summary"
-@using CoreBeliefsSurvey.Shared.Models
-@using System.Text.Json
-@using Microsoft.JSInterop
-@inject NavigationManager NavManager
 @inject IJSRuntime JSRuntime
+@using CoreBeliefsSurvey.Shared.Models
+@using Microsoft.AspNetCore.Components
+@using System.Text.Json
 
 <h3>Summary</h3>
 
 @if (beliefResponses != null)
 {
-    @foreach (var response in beliefResponses)
-    {
-        <div>
-            <h4>@response.Belief.BeliefName</h4>
-            <p>Selected Value: @response.SelectedValue</p>
-        </div>
-    }
-}
+    <div class="belief-container">
+        @foreach (var beliefResponse in beliefResponses)
+        {
+            var belief = beliefResponse.Belief;
+            var selectedValue = beliefResponse.SelectedValue;
+            var isPositive = belief.IsPositive;
 
-<button class="btn btn-primary" @onclick="NavigateBack">Back</button>
+            <div class="belief-card @(isPositive ? "positive" : "negative")">
+                <h4>@belief.BeliefName</h4>
+                <p>@belief.BeliefDescription</p>
+                <div class="response-icon-container">
+                    @GetResponseIcon(selectedValue, isPositive)
+                </div>
+            </div>
+        }
+    </div>
+
+    <p>Questions answered: @beliefResponses.Count of @filteredBeliefs.Length</p>
+
+    <button class="btn btn-primary" @onclick="NavigateToIndex">Go Back</button>
+}
+else
+{
+    <p>No belief responses found.</p>
+}
 
 @code {
     private List<CoreBeliefResponse> beliefResponses;
+    private CoreBelief[] filteredBeliefs;
+
+    [Inject]
+    private NavigationManager NavManager { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         var beliefResponsesJson = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "beliefResponses");
-        beliefResponses = JsonSerializer.Deserialize<List<CoreBeliefResponse>>(beliefResponsesJson);
+        if (!string.IsNullOrEmpty(beliefResponsesJson))
+            beliefResponses = JsonSerializer.Deserialize<List<CoreBeliefResponse>>(beliefResponsesJson);
+
+        filteredBeliefs = beliefResponses?.Select(response => response.Belief).ToArray();
     }
 
-    private void NavigateBack()
+    private MarkupString GetResponseIcon(int selectedValue, bool isPositive)
+    {
+        string icon = string.Empty;
+
+        if (selectedValue == 3)
+        {
+            icon = "<i class=\"far fa-meh\"></i>";
+        }
+        else if (isPositive)
+        {
+            if (selectedValue <= 2)
+            {
+                icon = "<i class=\"far fa-thumbs-down\"></i>";
+            }
+            else if (selectedValue == 3)
+            {
+                icon = "<i class=\"far fa-meh-blank\"></i>";
+            }
+            else if (selectedValue == 4)
+            {
+                icon = "<i class=\"far fa-smile\"></i>";
+            }
+            else if (selectedValue >= 5)
+            {
+                icon = "<i class=\"far fa-thumbs-up\"></i>";
+            }
+        }
+        else
+        {
+            if (selectedValue <= 2)
+            {
+                icon = "<i class=\"far fa-thumbs-up\"></i>";
+            }
+            else if (selectedValue == 3)
+            {
+                icon = "<i class=\"far fa-smile\"></i>";
+            }
+            else if (selectedValue == 4)
+            {
+                icon = "<i class=\"far fa-meh-blank\"></i>";
+            }
+            else if (selectedValue >= 5)
+            {
+                icon = "<i class=\"far fa-thumbs-down\"></i>";
+            }
+        }
+
+        return new MarkupString(icon);
+    }
+
+    private void NavigateToIndex()
     {
         NavManager.NavigateTo("/");
     }

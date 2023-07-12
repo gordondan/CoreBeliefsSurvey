@@ -2,10 +2,10 @@
 
 <div class="likert-scale">
     <TelerikRadioGroup Data="@likertOptions"
-                       @bind-Value="@SelectedOption"
-                       ValueField="@nameof(LikertOption.OptionId)"
-                       TextField="@nameof(LikertOption.OptionText)"
-                       ValueChanged="@HandleSelectedOptionChanged">
+    @bind-Value="@SelectedOption"
+                       ValueField="OptionIdProperty"
+                       TextField="OptionTextProperty"
+                       OnChange="@OnValueChange">
     </TelerikRadioGroup>
 </div>
 
@@ -18,30 +18,21 @@
 
     private List<LikertOption> likertOptions = new List<LikertOption>
     {
-        new LikertOption { OptionId = 1, OptionText = "Disagree" },
-        new LikertOption { OptionId = 2, OptionText = "Somewhat Disagree" },
-        new LikertOption { OptionId = 3, OptionText = "Neutral" },
-        new LikertOption { OptionId = 4, OptionText = "Somewhat Agree" },
-        new LikertOption { OptionId = 5, OptionText = "Agree" },
+        new LikertOption { OptionIdProperty = 1, OptionTextProperty = "Disagree" },
+        new LikertOption { OptionIdProperty = 2, OptionTextProperty = "Somewhat Disagree" },
+        new LikertOption { OptionIdProperty = 3, OptionTextProperty = "Neutral" },
+        new LikertOption { OptionIdProperty = 4, OptionTextProperty = "Somewhat Agree" },
+        new LikertOption { OptionIdProperty = 5, OptionTextProperty = "Agree" },
     };
 
     private class LikertOption
     {
-        public int OptionId { get; set; }
-        public string OptionText { get; set; }
+        public int OptionIdProperty { get; set; }
+        public string OptionTextProperty { get; set; }
     }
 
-    private async Task HandleSelectedOptionChanged(int value)
+    private async Task OnValueChange()
     {
-        SelectedOption = value;
         await SelectedOptionChanged.InvokeAsync(SelectedOption);
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await SelectedOptionChanged.InvokeAsync(SelectedOption);
-        }
     }
 }
