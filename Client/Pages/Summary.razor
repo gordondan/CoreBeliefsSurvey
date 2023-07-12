@@ -1,24 +1,35 @@
 ﻿@page "/summary"
 @using CoreBeliefsSurvey.Shared.Models
+@using System.Text.Json
+@using Microsoft.JSInterop
 @inject NavigationManager NavManager
+@inject IJSRuntime JSRuntime
 
 <h3>Summary</h3>
 
-<p>Number of questions selected: @selectedOption</p>
-<!-- Display other relevant information from the user's selections -->
+@if (beliefResponses != null)
+{
+    @foreach (var response in beliefResponses)
+    {
+        <div>
+            <h4>@response.Belief.BeliefName</h4>
+            <p>Selected Value: @response.SelectedValue</p>
+        </div>
+    }
+}
 
-<button class="btn btn-primary" @onclick="GoBack">Go Back</button>
+<button class="btn btn-primary" @onclick="NavigateBack">Back</button>
 
 @code {
-    private int? selectedOption;
+    private List<CoreBeliefResponse> beliefResponses;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        var uri = new Uri(NavManager.Uri);
-        
+        var beliefResponsesJson = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "beliefResponses");
+        beliefResponses = JsonSerializer.Deserialize<List<CoreBeliefResponse>>(beliefResponsesJson);
     }
 
-    private void GoBack()
+    private void NavigateBack()
     {
         NavManager.NavigateTo("/");
     }

@@ -3,6 +3,9 @@
 @using Microsoft.AspNetCore.Components
 @inject HttpClient Http
 @inject NavigationManager NavManager
+@inject IJSRuntime JSRuntime
+
+@using System.Text.Json
 
 @if (!loadingBeliefs)
 {
@@ -23,8 +26,7 @@ else if (selectedOption != null)
     <div class="belief-container">
         @foreach (var belief in filteredBeliefs)
         {
-            <BeliefCard Belief="@belief"  />
-
+            <BeliefCard Belief="@belief" OnOptionSelected="HandleOptionSelected" />
         }
     </div>
 
@@ -39,11 +41,11 @@ else if (selectedOption != null)
     private string selectedOption;
     private int questionsAnswered = 0;
     private bool loadingBeliefs = true;
-    private Dictionary<CoreBelief, CoreBeliefResponse> beliefResponses;
+    private List<CoreBeliefResponse> beliefResponses;
 
     protected override async Task OnInitializedAsync()
     {
-        beliefResponses = new Dictionary<CoreBelief, CoreBeliefResponse>();
+        beliefResponses = new List<CoreBeliefResponse>();
         await LoadBeliefs();
     }
 
@@ -62,10 +64,13 @@ else if (selectedOption != null)
         questionsAnswered = 0; // Reset the questions answered counter
     }
 
-    private void HandleOptionSelected((CoreBelief Belief, int SelectedValue) option)
+    private async Task HandleOptionSelected((CoreBelief Belief, int SelectedValue) option)
     {
         UpdateBeliefResponse(option.Belief, option.SelectedValue);
+        questionsAnswered++;
+        await InvokeAsync(StateHasChanged);
     }
+
 
     private async Task BeliefNumberSelectedAsync(int value)
     {
@@ -84,32 +89,31 @@ else if (selectedOption != null)
 
     public void UpdateBeliefResponse(CoreBelief belief, int selectedValue)
     {
-        if (beliefResponses.ContainsKey(belief))
+        var beliefResponse = beliefResponses.FirstOrDefault(r => r.Belief == belief);
+        if (beliefResponse != null)
         {
-            beliefResponses[belief].SelectedValue = selectedValue;
+            beliefResponse.SelectedValue = selectedValue;
         }
         else
         {
-            var beliefResponse = new CoreBeliefResponse
+            beliefResponse = new CoreBeliefResponse
                 {
                     Belief = belief,
                     SelectedValue = selectedValue
                 };
-            beliefResponses.Add(belief, beliefResponse);
+            beliefResponses.Add(beliefResponse);
         }
     }
 
     public CoreBeliefResponse GetBeliefResponse(CoreBelief belief)
     {
-        if (beliefResponses.ContainsKey(belief))
-        {
-            return beliefResponses[belief];
-        }
-        return null;
+        return beliefResponses.FirstOrDefault(r => r.Belief == belief);
     }
 
-    private void NavigateToSummary()
+    private async Task NavigateToSummary()
     {
+        await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "beliefResponses", JsonSerializer.Serialize(beliefResponses));
         NavManager.NavigateTo("/summary");
     }
+
 }

@@ -4,7 +4,7 @@
 <div class="belief-card @(Belief.IsPositive ? "positive" : "negative")">
     <h4>@Belief.BeliefName</h4>
     <p>@Belief.BeliefDescription</p>
-    <LikertScale SelectedOption="@SelectedOption" SelectedOptionChanged="@HandleSelectedOptionChanged" />
+    <LikertScale SelectedOption="@SelectedOption" SelectedOptionChanged="HandleSelectedOptionChanged" />
 </div>
 
 @code {
@@ -12,13 +12,13 @@
     public CoreBelief Belief { get; set; }
 
     [Parameter]
-    public EventCallback OnOptionSelected { get; set; }
+    public EventCallback<(CoreBelief Belief, int SelectedValue)> OnOptionSelected { get; set; }
 
     private int SelectedOption { get; set; }
 
     private async Task HandleSelectedOptionChanged(int value)
     {
         SelectedOption = value;
-        await OnOptionSelected.InvokeAsync();
+        await OnOptionSelected.InvokeAsync((Belief, SelectedOption));
     }
 }
