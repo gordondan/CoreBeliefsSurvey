@@ -1,0 +1,10 @@
+﻿body{
+    background-color: yellow;
+}
+.positive {
+    background-color: lightgreen;
+}
+
+.negative {
+    background-color: lightpink;
+}

@@ -1,36 +1,81 @@
 ﻿@page "/summary"
+
 @inject IJSRuntime JSRuntime
 @using CoreBeliefsSurvey.Shared.Models
 @using Microsoft.AspNetCore.Components
 @using System.Text.Json
 
+<style>
+    .response-icon-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px;
+        margin-right: 8px;
+        border-radius: 4px;
+    }
+    .red {
+        background-color: red;
+    }
+
+    .orange {
+        background-color: orange;
+    }
+
+    .white {
+        background-color: white;
+    }
+
+    .yellow {
+        background-color: yellow;
+    }
+
+    .green {
+        background-color: green;
+    }
+</style>
+
 <h3>Summary</h3>
 
 @if (beliefResponses != null)
 {
-    <div class="belief-container">
-        @foreach (var beliefResponse in beliefResponses)
-        {
-            var belief = beliefResponse.Belief;
-            var selectedValue = beliefResponse.SelectedValue;
-            var isPositive = belief.IsPositive;
+    <TelerikGridLayout>
+        <GridLayoutColumns>
+            <GridLayoutColumn Width="1fr"></GridLayoutColumn>
+            <GridLayoutColumn Width="7fr"></GridLayoutColumn>
+            <GridLayoutColumn Width="12fr"></GridLayoutColumn>
+        </GridLayoutColumns>
+        <GridLayoutRows>
+            <GridLayoutRow Height="auto"></GridLayoutRow>
+        </GridLayoutRows>
+        <GridLayoutItems>
+            @foreach (var beliefResponse in beliefResponses)
+            {
+                var belief = beliefResponse.Belief;
+                var selectedValue = beliefResponse.SelectedValue;
+                var isPositive = belief.IsPositive;
 
-            <div class="belief-card @(isPositive ? "positive" : "negative")">
-                <div class="response-icon-container">
-                    @GetResponseIcon(selectedValue, isPositive)
-                </div>
-                <div class="belief-info">
-                    <div class="belief-name" title="@belief.BeliefDescription">
-                        <span>@belief.BeliefName</span>
-                        <span class="question-mark-icon" title="Click for Description">
-                            <i class="far fa-question-circle"></i>
-                        </span>
+                <GridLayoutItem>
+                    <div class="response-icon-container @GetBackgroundColorClass(selectedValue)">
+                        @GetResponseIcon(selectedValue, isPositive)
                     </div>
+                </GridLayoutItem>
+
+                <GridLayoutItem>
+                    <div class="belief-info">
+                        <div class="belief-name" title="@belief.BeliefDescription">
+                            <span>@belief.BeliefName</span>
+                            <i class="far fa-question-circle question-mark-icon" title="@belief.BeliefDescription"></i>
+                        </div>
+                    </div>
+                </GridLayoutItem>
+                <GridLayoutItem>
                     <div class="response-text">@GetResponseText(selectedValue)</div>
-                </div>
-            </div>
-        }
-    </div>
+                </GridLayoutItem>
+            }
+        </GridLayoutItems>
+    </TelerikGridLayout>
+
 
     <p>Questions answered: @beliefResponses.Count of @filteredBeliefs.Length</p>
 
@@ -57,6 +102,25 @@ else
         filteredBeliefs = beliefResponses?.Select(response => response.Belief).ToArray();
     }
 
+    private string GetBackgroundColorClass(int selectedValue)
+    {
+        switch (selectedValue)
+        {
+            case 1:
+                return "red";
+            case 2:
+                return "orange";
+            case 3:
+                return "white";
+            case 4:
+                return "yellow";
+            case 5:
+                return "green";
+            default:
+                return string.Empty;
+        }
+    }
+
     private MarkupString GetResponseIcon(int selectedValue, bool isPositive)
     {
         string icon = string.Empty;
@@ -67,9 +131,13 @@ else
         }
         else if (isPositive)
         {
-            if (selectedValue <= 2)
+            if (selectedValue == 1)
             {
-                icon = "<i class=\"far fa-thumbs-down\"></i>";
+                icon = "<i class=\"far fa-frown-open\"></i>";
+            }
+            else if (selectedValue == 2)
+            {
+                icon = "<i class=\"far fa-frown\"></i>";
             }
             else if (selectedValue == 3)
             {
@@ -81,12 +149,16 @@ else
             }
             else if (selectedValue >= 5)
             {
-                icon = "<i class=\"far fa-thumbs-up\"></i>";
+                icon = "<i class=\"far fa-smile-beam\"></i>";
             }
         }
         else
         {
-            if (selectedValue <= 2)
+            if (selectedValue == 1)
+            {
+                icon = "<i class=\"far fa-thumbs-up\"></i>";
+            }
+            else if (selectedValue == 2)
             {
                 icon = "<i class=\"far fa-thumbs-up\"></i>";
             }
