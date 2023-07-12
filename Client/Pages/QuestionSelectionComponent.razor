@@ -1,0 +1,20 @@
+﻿@using Microsoft.AspNetCore.Components
+
+<p>How many questions would you like to answer?</p>
+<TelerikButtonGroup SelectionMode="@ButtonGroupSelectionMode.Single">
+    <ButtonGroupToggleButton @onclick="() => BeliefNumberSelected(5)">5</ButtonGroupToggleButton>
+    <ButtonGroupToggleButton @onclick="() => BeliefNumberSelected(10)">10</ButtonGroupToggleButton>
+    <ButtonGroupToggleButton @onclick="() => BeliefNumberSelected(25)">25</ButtonGroupToggleButton>
+    <ButtonGroupToggleButton @onclick="() => BeliefNumberSelected(50)">50</ButtonGroupToggleButton>
+    <ButtonGroupToggleButton @onclick="() => BeliefNumberSelected(-1)">All</ButtonGroupToggleButton>
+</TelerikButtonGroup>
+
+@code {
+    [Parameter]
+    public EventCallback<int> OnBeliefNumberSelected { get; set; }
+
+    private async Task BeliefNumberSelected(int value)
+    {
+        await OnBeliefNumberSelected.InvokeAsync(value);
+    }
+}

@@ -4,18 +4,14 @@
 @inject HttpClient Http
 @inject NavigationManager NavManager
 
-@if (!loadingBeliefs){
+@if (!loadingBeliefs)
+{
     @if (string.IsNullOrEmpty(selectedOption))
     {
-        <p>How many questions would you like to answer?</p>
-        <TelerikButtonGroup SelectionMode="@ButtonGroupSelectionMode.Single">
-        <ButtonGroupToggleButton @onclick="() => BeliefNumberSelected(5)">5</ButtonGroupToggleButton>
-        <ButtonGroupToggleButton @onclick="() => BeliefNumberSelected(10)">10</ButtonGroupToggleButton>
-        <ButtonGroupToggleButton @onclick="() => BeliefNumberSelected(10)">25</ButtonGroupToggleButton>
-        <ButtonGroupToggleButton @onclick="() => BeliefNumberSelected(10)">50</ButtonGroupToggleButton>
-    <ButtonGroupToggleButton @onclick="() => BeliefNumberSelected(-1)">All</ButtonGroupToggleButton>
-</TelerikButtonGroup>}
+        <QuestionSelectionComponent OnBeliefNumberSelected="BeliefNumberSelectedAsync" />
+    }
 }
+
 @if (loadingBeliefs)
 {
     <p><em>Loading...</em></p>
@@ -27,7 +23,7 @@ else if (selectedOption != null)
     <div class="belief-container">
         @foreach (var belief in filteredBeliefs)
         {
-            <BeliefCard Belief="@belief" OnOptionSelected="(option) => HandleOptionSelected(option)" SelectedOption="beliefResponses.ContainsKey(belief) ? beliefResponses[belief].SelectedValue : 0" />
+            <BeliefCard Belief="@belief"  />
 
         }
     </div>
@@ -43,7 +39,6 @@ else if (selectedOption != null)
     private string selectedOption;
     private int questionsAnswered = 0;
     private bool loadingBeliefs = true;
-    private List<string> numberOfQuestionsOptions = new List<string> { "5", "10", "25", "50", "All" };
     private Dictionary<CoreBelief, CoreBeliefResponse> beliefResponses;
 
     protected override async Task OnInitializedAsync()
@@ -66,13 +61,13 @@ else if (selectedOption != null)
         filteredBeliefs = selectedOption == "All" ? randomizedBeliefs : randomizedBeliefs.Take(int.Parse(selectedOption)).ToArray();
         questionsAnswered = 0; // Reset the questions answered counter
     }
-    
+
     private void HandleOptionSelected((CoreBelief Belief, int SelectedValue) option)
     {
         UpdateBeliefResponse(option.Belief, option.SelectedValue);
     }
 
-    private void BeliefNumberSelected(int value)
+    private async Task BeliefNumberSelectedAsync(int value)
     {
         questionsAnswered = 0;
         if (value < 0)
@@ -84,6 +79,7 @@ else if (selectedOption != null)
             selectedOption = value.ToString();
         }
         FilterBeliefs();
+        await InvokeAsync(StateHasChanged); // Update the component
     }
 
     public void UpdateBeliefResponse(CoreBelief belief, int selectedValue)
