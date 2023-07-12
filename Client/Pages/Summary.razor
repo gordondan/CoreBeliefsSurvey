@@ -16,10 +16,17 @@
             var isPositive = belief.IsPositive;
 
             <div class="belief-card @(isPositive ? "positive" : "negative")">
-                <h4>@belief.BeliefName</h4>
-                <p>@belief.BeliefDescription</p>
                 <div class="response-icon-container">
                     @GetResponseIcon(selectedValue, isPositive)
+                </div>
+                <div class="belief-info">
+                    <div class="belief-name" title="@belief.BeliefDescription">
+                        <span>@belief.BeliefName</span>
+                        <span class="question-mark-icon" title="Click for Description">
+                            <i class="far fa-question-circle"></i>
+                        </span>
+                    </div>
+                    <div class="response-text">@GetResponseText(selectedValue)</div>
                 </div>
             </div>
         }
@@ -98,6 +105,34 @@ else
         }
 
         return new MarkupString(icon);
+    }
+
+    private string GetResponseText(int selectedValue)
+    {
+        string text = string.Empty;
+
+        if (selectedValue == 1)
+        {
+            text = "Disagree";
+        }
+        else if (selectedValue == 2)
+        {
+            text = "Somewhat Disagree";
+        }
+        else if (selectedValue == 3)
+        {
+            text = "Neutral";
+        }
+        else if (selectedValue == 4)
+        {
+            text = "Somewhat Agree";
+        }
+        else if (selectedValue == 5)
+        {
+            text = "Agree";
+        }
+
+        return text;
     }
 
     private void NavigateToIndex()
