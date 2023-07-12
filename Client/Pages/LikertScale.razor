@@ -2,9 +2,10 @@
 
 <div class="likert-scale">
     <TelerikRadioGroup Data="@likertOptions"
-    @bind-Value="@SelectedOption"
+                       @bind-Value="@SelectedOption"
                        ValueField="@nameof(LikertOption.OptionId)"
-                       TextField="@nameof(LikertOption.OptionText)">
+                       TextField="@nameof(LikertOption.OptionText)"
+                       ValueChanged="@HandleSelectedOptionChanged">
     </TelerikRadioGroup>
 </div>
 
@@ -28,6 +29,12 @@
     {
         public int OptionId { get; set; }
         public string OptionText { get; set; }
+    }
+
+    private async Task HandleSelectedOptionChanged(int value)
+    {
+        SelectedOption = value;
+        await SelectedOptionChanged.InvokeAsync(SelectedOption);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

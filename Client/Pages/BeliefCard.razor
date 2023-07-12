@@ -4,7 +4,7 @@
 <div class="belief-card @(Belief.IsPositive ? "positive" : "negative")">
     <h4>@Belief.BeliefName</h4>
     <p>@Belief.BeliefDescription</p>
-    <LikertScale SelectedOption="@SelectedOption" SelectedOptionChanged="HandleSelectedOptionChanged" />
+    <LikertScale SelectedOption="@SelectedOption" SelectedOptionChanged="@HandleSelectedOptionChanged" />
 </div>
 
 @code {
