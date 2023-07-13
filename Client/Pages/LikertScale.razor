@@ -1,12 +1,12 @@
-﻿@using Telerik.Blazor.Components
-
-<div class="likert-scale">
-    <TelerikRadioGroup Data="@likertOptions"
-    @bind-Value="@SelectedOption"
-                       ValueField="OptionIdProperty"
-                       TextField="OptionTextProperty"
-                       OnChange="@OnValueChange">
-    </TelerikRadioGroup>
+﻿<div class="likert-scale">
+    <div class="likert-buttons">
+        @foreach (var option in likertOptions)
+        {
+            <div class="likert-button" @onclick="() => OnValueChange(option.OptionIdProperty)">
+                @option.OptionTextProperty
+            </div>
+        }
+    </div>
 </div>
 
 @code {
@@ -31,8 +31,37 @@
         public string OptionTextProperty { get; set; }
     }
 
-    private async Task OnValueChange()
+    private async Task OnValueChange(int selectedOption)
     {
-        await SelectedOptionChanged.InvokeAsync(SelectedOption);
+        SelectedOption = selectedOption;
+        await SelectedOptionChanged.InvokeAsync(selectedOption);
+    }
+
+    private bool IsOptionSelected(int optionId)
+    {
+        return optionId == SelectedOption;
     }
 }
+
+<style>
+    .likert-scale {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .likert-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .likert-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #e0e0e0;
+        padding: 8px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+</style>
