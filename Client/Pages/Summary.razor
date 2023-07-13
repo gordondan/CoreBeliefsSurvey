@@ -4,7 +4,7 @@
 @using CoreBeliefsSurvey.Shared.Models
 @using Microsoft.AspNetCore.Components
 @using System.Text.Json
-
+@using System.IO;
 <style>
     .response-icon-container {
         display: flex;
@@ -88,7 +88,6 @@
             }
         </GridLayoutItems>
     </TelerikGridLayout>
-
 
     <p>Questions answered: @beliefResponses.Count of @filteredBeliefs.Length</p>
 
@@ -216,7 +215,7 @@ else
         return text;
     }
 
-    private void NavigateToIndex()
+   private void NavigateToIndex()
     {
         NavManager.NavigateTo("/");
     }
