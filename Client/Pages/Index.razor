@@ -60,7 +60,6 @@ else if (selectedOption != null)
         var random = new Random();
         var randomizedBeliefs = allBeliefs.OrderBy(x => random.Next()).ToArray();
         selectedOption = selectedOption ?? "All";
-        randomizedBeliefs = randomizedBeliefs.Where(x => x.IsPositive).ToArray();//For debug
         filteredBeliefs = selectedOption == "All" ? randomizedBeliefs : randomizedBeliefs.Take(int.Parse(selectedOption)).ToArray();
         questionsAnswered = 0; // Reset the questions answered counter
     }
