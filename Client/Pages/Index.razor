@@ -19,7 +19,7 @@
 {
     <p><em>Loading...</em></p>
 }
-else if (selectedOption != null || (beliefResponses != null && beliefResponses.Count()>0))
+else if (selectedOption != null || (beliefResponses != null && beliefResponses.Count() > 0))
 {
     <h3>Beliefs</h3>
 
@@ -59,6 +59,7 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadBeliefs();
         // Read data from sessionStorage
         var beliefResponsesJson = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "beliefResponses");
         if (!string.IsNullOrEmpty(beliefResponsesJson))
@@ -70,38 +71,65 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
         {
             beliefResponses = new List<CoreBeliefResponse>();
         }
-
-        await LoadBeliefs();
     }
 
-
+    /// <summary>
+    /// Moves to the next belief in the list.
+    /// </summary>
     private void MoveNext()
     {
         currentIndex++;
     }
 
+    /// <summary>
+    /// Moves to the previous belief in the list.
+    /// </summary>
     private void MovePrevious()
     {
         currentIndex--;
     }
 
+    /// <summary>
+    /// Loads the beliefs from the server.
+    /// </summary>
     private async Task LoadBeliefs()
     {
-        allBeliefs = await Http.GetFromJsonAsync<CoreBelief[]>("api/Beliefs");
-        loadingBeliefs = false;
+        try
+        {
+            allBeliefs = await Http.GetFromJsonAsync<CoreBelief[]>("api/Beliefs");
+            loadingBeliefs = false;
+        }
+        catch (Exception ex)
+        {
+            // Handle the error, log, or display an error message
+            Console.WriteLine($"Error loading beliefs: {ex.Message}");
+        }
     }
 
+    /// <summary>
+    /// Restarts the survey by clearing all the responses and reloading the beliefs.
+    /// </summary>
     private async Task RestartQuestions()
     {
-        beliefResponses.Clear();
-        filteredBeliefs = new CoreBelief[0];
-        selectedOption = null;
-        await JSRuntime.InvokeVoidAsync("sessionStorage.removeItem", "beliefResponses");
-        await LoadBeliefs();
-        await InvokeAsync(StateHasChanged); // Update the component
+        try
+        {
+            beliefResponses.Clear();
+            filteredBeliefs = new CoreBelief[0];
+            selectedOption = null;
+            await JSRuntime.InvokeVoidAsync("sessionStorage.removeItem", "beliefResponses");
+            await LoadBeliefs();
+            await InvokeAsync(StateHasChanged); // Update the component
+        }
+        catch (Exception ex)
+        {
+            // Handle the error, log, or display an error message
+            Console.WriteLine($"Error restarting questions: {ex.Message}");
+        }
     }
 
-
+    /// <summary>
+    /// Filters the beliefs based on the selected option.
+    /// </summary>
     private void FilterBeliefs()
     {
         var random = new Random();
@@ -111,34 +139,59 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
         questionsAnswered = beliefResponses.Count();
     }
 
+    /// <summary>
+    /// Handles the selection of an option for a belief.
+    /// </summary>
     private async Task HandleOptionSelected((CoreBelief Belief, int SelectedValue) option)
     {
-        UpdateBeliefResponse(option.Belief, option.SelectedValue);
-        if (beliefResponses.Count() < filteredBeliefs.Length-1)
+        try
         {
-            MoveNext();
+            UpdateBeliefResponse(option.Belief, option.SelectedValue);
+            if (beliefResponses.Count() < filteredBeliefs.Length - 1)
+            {
+                MoveNext();
+            }
+            else
+            {
+                await NavigateToSummary();
+            }
+            await InvokeAsync(StateHasChanged);
         }
-        else
+        catch (Exception ex)
         {
-            await NavigateToSummary();
+            // Handle the error, log, or display an error message
+            Console.WriteLine($"Error handling option selected: {ex.Message}");
         }
-        await InvokeAsync(StateHasChanged);
     }
 
+    /// <summary>
+    /// Handles the selection of a belief number.
+    /// </summary>
     private async Task BeliefNumberSelectedAsync(int value)
     {
-        if (value < 0)
+        try
         {
-            selectedOption = "All";
+            if (value < 0)
+            {
+                selectedOption = "All";
+            }
+            else
+            {
+                selectedOption = value.ToString();
+            }
+            FilterBeliefs();
+            await InvokeAsync(StateHasChanged); // Update the component
         }
-        else
+        catch (Exception ex)
         {
-            selectedOption = value.ToString();
+            // Handle the error, log, or display an error message
+            Console.WriteLine($"Error handling belief number selected: {ex.Message}");
         }
-        FilterBeliefs();
-        await InvokeAsync(StateHasChanged); // Update the component
     }
 
+    /// <summary>
+    /// Updates the response for a belief.
+    /// </summary>
     public void UpdateBeliefResponse(CoreBelief belief, int selectedValue)
     {
         var beliefResponse = beliefResponses.FirstOrDefault(r => r.Belief == belief);
@@ -156,19 +209,30 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
             beliefResponses.Add(beliefResponse);
         }
         questionsAnswered = beliefResponses.Count();
-
     }
 
-
+    /// <summary>
+    /// Gets the response for a belief.
+    /// </summary>
     public CoreBeliefResponse GetBeliefResponse(CoreBelief belief)
     {
         return beliefResponses.FirstOrDefault(r => r.Belief == belief);
     }
 
+    /// <summary>
+    /// Navigates to the summary page and saves the belief responses in the sessionStorage.
+    /// </summary>
     private async Task NavigateToSummary()
     {
-        await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "beliefResponses", JsonSerializer.Serialize(beliefResponses));
-        NavManager.NavigateTo("/summary");
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "beliefResponses", JsonSerializer.Serialize(beliefResponses));
+            NavManager.NavigateTo("/summary");
+        }
+        catch (Exception ex)
+        {
+            // Handle the error, log, or display an error message
+            Console.WriteLine($"Error navigating to summary: {ex.Message}");
+        }
     }
-
 }
