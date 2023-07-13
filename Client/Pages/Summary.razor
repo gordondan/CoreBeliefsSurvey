@@ -134,63 +134,55 @@ else
         }
     }
 
+    /// <summary>
+    /// Returns the response icon markup based on the selected value and positivity.
+    /// </summary>
+    /// <param name="selectedValue">The selected value.</param>
+    /// <param name="isPositive">Indicates whether the belief is positive.</param>
+    /// <returns>The response icon markup.</returns>
     private MarkupString GetResponseIcon(int selectedValue, bool isPositive)
     {
         string icon = string.Empty;
+        int happyValue = isPositive ? selectedValue : 6 - selectedValue;
 
-        if (selectedValue == 3)
+        try
         {
-            icon = "<i class=\"far fa-meh\"></i>";
-        }
-        else if (isPositive)
-        {
-            if (selectedValue == 1)
+            switch (happyValue)
             {
-                icon = "<i class=\"far fa-frown-open\"></i>";
-            }
-            else if (selectedValue == 2)
-            {
-                icon = "<i class=\"far fa-frown\"></i>";
-            }
-            else if (selectedValue == 3)
-            {
-                icon = "<i class=\"far fa-meh-blank\"></i>";
-            }
-            else if (selectedValue == 4)
-            {
-                icon = "<i class=\"far fa-smile\"></i>";
-            }
-            else if (selectedValue >= 5)
-            {
-                icon = "<i class=\"far fa-smile-beam\"></i>";
+                case 1:
+                    icon = "<i class=\"far fa-frown-open\"></i>";
+                    break;
+                case 2:
+                    icon = "<i class=\"far fa-frown\"></i>";
+                    break;
+                case 4:
+                    icon = "<i class=\"far fa-smile\"></i>";
+                    break;
+                case int value when value >= 5:
+                    icon = "<i class=\"far fa-smile-beam\"></i>";
+                    break;
+                default:
+                    // Handle invalid happyValue
+                    LogError($"Invalid happyValue: {happyValue}");
+                    break;
             }
         }
-        else
+        catch (Exception ex)
         {
-            if (selectedValue == 1)
-            {
-                icon = "<i class=\"far fa-thumbs-up\"></i>";
-            }
-            else if (selectedValue == 2)
-            {
-                icon = "<i class=\"far fa-thumbs-up\"></i>";
-            }
-            else if (selectedValue == 3)
-            {
-                icon = "<i class=\"far fa-smile\"></i>";
-            }
-            else if (selectedValue == 4)
-            {
-                icon = "<i class=\"far fa-meh-blank\"></i>";
-            }
-            else if (selectedValue >= 5)
-            {
-                icon = "<i class=\"far fa-thumbs-down\"></i>";
-            }
+            // Handle any exception that might occur
+            LogError($"An error occurred: {ex.Message}");
         }
 
         return new MarkupString(icon);
     }
+
+    private void LogError(string errorMessage)
+    {
+        // Logging logic to log the error message
+        // Replace with your actual logging implementation
+        Console.WriteLine($"Error: {errorMessage}");
+    }
+
 
     private string GetResponseText(int selectedValue)
     {
