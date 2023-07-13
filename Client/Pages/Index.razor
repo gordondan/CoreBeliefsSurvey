@@ -19,34 +19,70 @@
 {
     <p><em>Loading...</em></p>
 }
-else if (selectedOption != null)
+else if (selectedOption != null || (beliefResponses != null && beliefResponses.Count()>0))
 {
     <h3>Beliefs</h3>
 
     <div class="belief-container">
-        @foreach (var belief in filteredBeliefs)
+        @if (filteredBeliefs.Length > 0)
         {
-            <BeliefCard Belief="@belief" OnOptionSelected="HandleOptionSelected" />
+            <BeliefCard Belief="@filteredBeliefs[currentIndex]"
+                        SelectedValue="@(GetBeliefResponse(filteredBeliefs[currentIndex])?.SelectedValue ?? 0)"
+                        OnOptionSelected="HandleOptionSelected" />
+            @if (currentIndex > 0)
+            {
+                <button @onclick="MovePrevious">Previous</button>
+            }
+            @if (currentIndex < filteredBeliefs.Length - 1)
+            {
+                <button @onclick="MoveNext">Next</button>
+            }
         }
     </div>
 
-    <p>Questions answered: @questionsAnswered of @filteredBeliefs.Length</p>
+    <p>Question: @(currentIndex + 1) of @filteredBeliefs.Length</p>
+    <p>Answered: @(beliefResponses.Count()) of @filteredBeliefs.Length</p>
 
     <button class="btn btn-primary" @onclick="NavigateToSummary">Submit</button>
+    <button class="btn btn-primary" @onclick="RestartQuestions">Restart Questions</button>
+
 }
 
 @code {
     private CoreBelief[] allBeliefs;
     private CoreBelief[] filteredBeliefs;
     private string selectedOption;
+    private int currentIndex = 0;
     private int questionsAnswered = 0;
     private bool loadingBeliefs = true;
     private List<CoreBeliefResponse> beliefResponses;
 
     protected override async Task OnInitializedAsync()
     {
-        beliefResponses = new List<CoreBeliefResponse>();
+        // Read data from sessionStorage
+        var beliefResponsesJson = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "beliefResponses");
+        if (!string.IsNullOrEmpty(beliefResponsesJson))
+        {
+            beliefResponses = JsonSerializer.Deserialize<List<CoreBeliefResponse>>(beliefResponsesJson);
+            questionsAnswered = beliefResponses.Count();
+        }
+        else
+        {
+            beliefResponses = new List<CoreBeliefResponse>();
+        }
+
         await LoadBeliefs();
+    }
+
+
+    private void MoveNext()
+    {
+        currentIndex++;
+    }
+
+    private void MovePrevious()
+    {
+        currentIndex--;
     }
 
     private async Task LoadBeliefs()
@@ -55,26 +91,42 @@ else if (selectedOption != null)
         loadingBeliefs = false;
     }
 
+    private async Task RestartQuestions()
+    {
+        beliefResponses.Clear();
+        filteredBeliefs = new CoreBelief[0];
+        selectedOption = null;
+        await JSRuntime.InvokeVoidAsync("sessionStorage.removeItem", "beliefResponses");
+        await LoadBeliefs();
+        await InvokeAsync(StateHasChanged); // Update the component
+    }
+
+
     private void FilterBeliefs()
     {
         var random = new Random();
         var randomizedBeliefs = allBeliefs.OrderBy(x => random.Next()).ToArray();
         selectedOption = selectedOption ?? "All";
         filteredBeliefs = selectedOption == "All" ? randomizedBeliefs : randomizedBeliefs.Take(int.Parse(selectedOption)).ToArray();
-        questionsAnswered = 0; // Reset the questions answered counter
+        questionsAnswered = beliefResponses.Count();
     }
 
     private async Task HandleOptionSelected((CoreBelief Belief, int SelectedValue) option)
     {
         UpdateBeliefResponse(option.Belief, option.SelectedValue);
-        questionsAnswered++;
+        if (beliefResponses.Count() < filteredBeliefs.Length - 1)
+        {
+            MoveNext();
+        }
+        else
+        {
+            await NavigateToSummary();
+        }
         await InvokeAsync(StateHasChanged);
     }
 
-
     private async Task BeliefNumberSelectedAsync(int value)
     {
-        questionsAnswered = 0;
         if (value < 0)
         {
             selectedOption = "All";
@@ -103,7 +155,10 @@ else if (selectedOption != null)
                 };
             beliefResponses.Add(beliefResponse);
         }
+        questionsAnswered = beliefResponses.Count();
+
     }
+
 
     public CoreBeliefResponse GetBeliefResponse(CoreBelief belief)
     {

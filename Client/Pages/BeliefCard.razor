@@ -12,9 +12,17 @@
     public CoreBelief Belief { get; set; }
 
     [Parameter]
+    public int SelectedValue { get; set; } // added parameter to receive previously saved value
+
+    [Parameter]
     public EventCallback<(CoreBelief Belief, int SelectedValue)> OnOptionSelected { get; set; }
 
     private int SelectedOption { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        SelectedOption = SelectedValue; // initializing selected option with passed value
+    }
 
     private async Task HandleSelectedOptionChanged(int value)
     {
@@ -22,3 +30,4 @@
         await OnOptionSelected.InvokeAsync((Belief, SelectedOption));
     }
 }
+
