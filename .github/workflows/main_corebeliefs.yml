@@ -8,7 +8,8 @@ on:
     branches:
       - main
   workflow_dispatch:
-
+env:
+  TELERIK: ${{secrets.TELERIK}}
 jobs:
   build:
     runs-on: windows-latest
