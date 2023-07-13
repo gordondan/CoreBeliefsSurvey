@@ -114,7 +114,7 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
     private async Task HandleOptionSelected((CoreBelief Belief, int SelectedValue) option)
     {
         UpdateBeliefResponse(option.Belief, option.SelectedValue);
-        if (beliefResponses.Count() < filteredBeliefs.Length - 1)
+        if (beliefResponses.Count() < filteredBeliefs.Length-1)
         {
             MoveNext();
         }
