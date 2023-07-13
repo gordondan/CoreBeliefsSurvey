@@ -2,10 +2,51 @@
 @using Telerik.Blazor.Components
 
 <div class="belief-card @(Belief.IsPositive ? "positive" : "negative")">
-    <h4>@Belief.BeliefName</h4>
-    <p>@Belief.BeliefDescription</p>
-    <LikertScale SelectedOption="@SelectedOption" SelectedOptionChanged="@HandleSelectedOptionChanged" />
+    <div class="card rounded-corners">
+        <div class="card-header">
+            <h4>@Belief.BeliefName</h4>
+            <i class="far fa-question-circle question-mark-icon" title="@Belief.BeliefDescription"></i>
+        </div>
+        <div class="card-body">
+            <LikertScale SelectedOption="@SelectedOption" SelectedOptionChanged="@HandleSelectedOptionChanged" />
+        </div>
+    </div>
 </div>
+
+<style>
+    .belief-card {
+        margin-bottom: 20px;
+    }
+
+    .positive {
+        background-color: white;
+    }
+
+    .negative {
+        background-color: lightpink;
+    }
+
+    .rounded-corners {
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .card {
+        background-color: white;
+        padding: 10px;
+    }
+
+    .card-header {
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-bottom: 1px solid #dee2e6;
+        border-radius: 10px 10px 0 0;
+    }
+
+    .card-body {
+        padding: 10px;
+    }
+</style>
 
 @code {
     [Parameter]
@@ -30,4 +71,3 @@
         await OnOptionSelected.InvokeAsync((Belief, SelectedOption));
     }
 }
-

@@ -7,7 +7,7 @@
 
 @using System.Text.Json
 
-@if (!loadingBeliefs)
+@if ((!loadingBeliefs && beliefResponses == null) || (beliefResponses!= null && !beliefResponses.Any()))
 {
     @if (string.IsNullOrEmpty(selectedOption))
     {
@@ -56,22 +56,36 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
     private int questionsAnswered = 0;
     private bool loadingBeliefs = true;
     private List<CoreBeliefResponse> beliefResponses;
+    private string filteredBeliefsJson;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadBeliefs();
-        // Read data from sessionStorage
+
+        // Retrieve filteredBeliefs from session storage
+        filteredBeliefsJson = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "filteredBeliefs");
+        if (!string.IsNullOrEmpty(filteredBeliefsJson))
+        {
+            filteredBeliefs = JsonSerializer.Deserialize<CoreBelief[]>(filteredBeliefsJson);
+        }
+
+        // Retrieve beliefResponses from session storage
         var beliefResponsesJson = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "beliefResponses");
         if (!string.IsNullOrEmpty(beliefResponsesJson))
         {
             beliefResponses = JsonSerializer.Deserialize<List<CoreBeliefResponse>>(beliefResponsesJson);
             questionsAnswered = beliefResponses.Count();
+
+            // Set currentIndex based on the beliefResponses
+            currentIndex = beliefResponses.Count;
         }
         else
         {
             beliefResponses = new List<CoreBeliefResponse>();
+            currentIndex = 0;
         }
     }
+
 
     /// <summary>
     /// Moves to the next belief in the list.
@@ -97,6 +111,7 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
         try
         {
             allBeliefs = await Http.GetFromJsonAsync<CoreBelief[]>("api/Beliefs");
+
             loadingBeliefs = false;
         }
         catch (Exception ex)
@@ -106,6 +121,7 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
         }
     }
 
+
     /// <summary>
     /// Restarts the survey by clearing all the responses and reloading the beliefs.
     /// </summary>
@@ -114,9 +130,10 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
         try
         {
             beliefResponses.Clear();
-            filteredBeliefs = new CoreBelief[0];
+            filteredBeliefs = allBeliefs; // Reset filteredBeliefs to initial value
             selectedOption = null;
             await JSRuntime.InvokeVoidAsync("sessionStorage.removeItem", "beliefResponses");
+            await JSRuntime.InvokeVoidAsync("sessionStorage.removeItem", "filteredBeliefs"); // Remove filteredBeliefs from session storage
             await LoadBeliefs();
             await InvokeAsync(StateHasChanged); // Update the component
         }
@@ -127,16 +144,21 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
         }
     }
 
+
     /// <summary>
     /// Filters the beliefs based on the selected option.
     /// </summary>
-    private void FilterBeliefs()
+    private async Task FilterBeliefs()
     {
         var random = new Random();
         var randomizedBeliefs = allBeliefs.OrderBy(x => random.Next()).ToArray();
         selectedOption = selectedOption ?? "All";
         filteredBeliefs = selectedOption == "All" ? randomizedBeliefs : randomizedBeliefs.Take(int.Parse(selectedOption)).ToArray();
         questionsAnswered = beliefResponses.Count();
+
+        // Serialize and store filteredBeliefs in session storage
+        filteredBeliefsJson = JsonSerializer.Serialize(filteredBeliefs);
+        await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "filteredBeliefs", filteredBeliefsJson);
     }
 
     /// <summary>
@@ -179,7 +201,7 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
             {
                 selectedOption = value.ToString();
             }
-            FilterBeliefs();
+            await FilterBeliefs();
             await InvokeAsync(StateHasChanged); // Update the component
         }
         catch (Exception ex)
