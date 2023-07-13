@@ -69,7 +69,7 @@
                 var isPositive = belief.IsPositive;
 
                 <GridLayoutItem>
-                    <div class="response-icon-container @GetBackgroundColorClass(selectedValue)">
+                    <div class="response-icon-container @GetBackgroundColorClass(selectedValue,belief.IsPositive)">
                         @GetResponseIcon(selectedValue, isPositive)
                     </div>
                 </GridLayoutItem>
@@ -115,24 +115,28 @@ else
         filteredBeliefs = beliefResponses?.Select(response => response.Belief).ToArray();
     }
 
-    private string GetBackgroundColorClass(int selectedValue)
+    private string GetBackgroundColorClass(int selectedValue, bool isPositive)
     {
-        switch (selectedValue)
+        int happyValue = isPositive ? selectedValue : 6 - selectedValue;
+
+        switch (happyValue)
         {
             case 1:
-                return "red";
+                return "red"; // Red background color
             case 2:
-                return "orange";
+                return "orange"; // Orange background color
             case 3:
-                return "white";
+                return "white"; // White background color
             case 4:
-                return "yellow";
-            case 5:
-                return "green";
+                return "yellow"; // Yellow background color
+            case int value when value >= 5:
+                return "green"; // Green background color
             default:
                 return string.Empty;
         }
     }
+
+
 
     /// <summary>
     /// Returns the response icon markup based on the selected value and positivity.
