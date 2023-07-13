@@ -1,9 +1,10 @@
 ﻿@page "/"
+@using CoreBeliefsSurvey.Client.Services;
 @using CoreBeliefsSurvey.Shared.Models
 @using Microsoft.AspNetCore.Components
 @inject HttpClient Http
 @inject NavigationManager NavManager
-@inject IJSRuntime JSRuntime
+@inject BeliefResponseService BeliefResponseService
 
 @using System.Text.Json
 
@@ -24,7 +25,7 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
     <h3>Beliefs</h3>
 
     <div class="belief-container">
-        @if (filteredBeliefs.Length > 0)
+        @if (filteredBeliefs?.Count() > 0)
         {
             <BeliefCard Belief="@filteredBeliefs[currentIndex]"
                         SelectedValue="@(GetBeliefResponse(filteredBeliefs[currentIndex])?.SelectedValue ?? 0)"
@@ -33,15 +34,16 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
             {
                 <button @onclick="MovePrevious">Previous</button>
             }
-            @if (currentIndex < filteredBeliefs.Length - 1)
+            @if (currentIndex < filteredBeliefs.Count() - 1)
             {
                 <button @onclick="MoveNext">Next</button>
             }
         }
+
     </div>
 
-    <p>Question: @(currentIndex + 1) of @filteredBeliefs.Length</p>
-    <p>Answered: @(beliefResponses.Count()) of @filteredBeliefs.Length</p>
+    <p>Question: @(currentIndex + 1) of @filteredBeliefs.Count()</p>
+    <p>Answered: @(beliefResponses.Count()) of @filteredBeliefs.Count()</p>
 
     <button class="btn btn-primary" @onclick="NavigateToSummary">Submit</button>
     <button class="btn btn-primary" @onclick="RestartQuestions">Restart Questions</button>
@@ -49,8 +51,8 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
 }
 
 @code {
-    private CoreBelief[] allBeliefs;
-    private CoreBelief[] filteredBeliefs;
+    private List<CoreBelief> allBeliefs;
+    private List<CoreBelief> filteredBeliefs;
     private string selectedOption;
     private int currentIndex = 0;
     private int questionsAnswered = 0;
@@ -62,28 +64,27 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
     {
         await LoadBeliefs();
 
-        // Retrieve filteredBeliefs from session storage
-        filteredBeliefsJson = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "filteredBeliefs");
-        if (!string.IsNullOrEmpty(filteredBeliefsJson))
-        {
-            filteredBeliefs = JsonSerializer.Deserialize<CoreBelief[]>(filteredBeliefsJson);
-        }
+        filteredBeliefs = await BeliefResponseService.LoadFilteredBeliefs();
 
         // Retrieve beliefResponses from session storage
-        var beliefResponsesJson = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "beliefResponses");
-        if (!string.IsNullOrEmpty(beliefResponsesJson))
-        {
-            beliefResponses = JsonSerializer.Deserialize<List<CoreBeliefResponse>>(beliefResponsesJson);
-            questionsAnswered = beliefResponses.Count();
 
-            // Set currentIndex based on the beliefResponses
-            currentIndex = beliefResponses.Count;
+        beliefResponses = await BeliefResponseService.LoadBeliefResponses();
+        if (beliefResponses != null && beliefResponses.Any())
+        {
+            questionsAnswered = beliefResponses.Count();
         }
         else
         {
             beliefResponses = new List<CoreBeliefResponse>();
             currentIndex = 0;
         }
+
+        // Ensure currentIndex is valid with respect to filteredBeliefs length
+        if (filteredBeliefs == null || currentIndex >= filteredBeliefs.Count())
+        {
+            currentIndex = 0;
+        }
+        await InvokeAsync(StateHasChanged);
     }
 
 
@@ -92,7 +93,14 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
     /// </summary>
     private void MoveNext()
     {
-        currentIndex++;
+        if (currentIndex < filteredBeliefs.Count() - 1)
+        {
+            currentIndex++;
+        }
+        else if (currentIndex >= filteredBeliefs.Count()) // if out of bounds
+        {
+            currentIndex = filteredBeliefs.Count() - 1; // set to last valid index
+        }
     }
 
     /// <summary>
@@ -100,8 +108,17 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
     /// </summary>
     private void MovePrevious()
     {
-        currentIndex--;
+        if (currentIndex > 0)
+        {
+            currentIndex--;
+        }
+        else if (currentIndex < 0) // if out of bounds
+        {
+            currentIndex = 0; // set to first valid index
+        }
     }
+
+
 
     /// <summary>
     /// Loads the beliefs from the server.
@@ -110,7 +127,7 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
     {
         try
         {
-            allBeliefs = await Http.GetFromJsonAsync<CoreBelief[]>("api/Beliefs");
+            allBeliefs = await Http.GetFromJsonAsync<List<CoreBelief>>("api/Beliefs");
 
             loadingBeliefs = false;
         }
@@ -132,8 +149,8 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
             beliefResponses.Clear();
             filteredBeliefs = allBeliefs; // Reset filteredBeliefs to initial value
             selectedOption = null;
-            await JSRuntime.InvokeVoidAsync("sessionStorage.removeItem", "beliefResponses");
-            await JSRuntime.InvokeVoidAsync("sessionStorage.removeItem", "filteredBeliefs"); // Remove filteredBeliefs from session storage
+            await BeliefResponseService.RemoveBeliefResponses();
+            await BeliefResponseService.RemoveFilteredBeliefs();
             await LoadBeliefs();
             await InvokeAsync(StateHasChanged); // Update the component
         }
@@ -145,21 +162,22 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
     }
 
 
+
     /// <summary>
     /// Filters the beliefs based on the selected option.
     /// </summary>
     private async Task FilterBeliefs()
     {
         var random = new Random();
-        var randomizedBeliefs = allBeliefs.OrderBy(x => random.Next()).ToArray();
+        var randomizedBeliefs = allBeliefs.OrderBy(x => random.Next()).ToList();
         selectedOption = selectedOption ?? "All";
-        filteredBeliefs = selectedOption == "All" ? randomizedBeliefs : randomizedBeliefs.Take(int.Parse(selectedOption)).ToArray();
+        filteredBeliefs = selectedOption == "All" ? randomizedBeliefs : randomizedBeliefs.Take(int.Parse(selectedOption)).ToList();
         questionsAnswered = beliefResponses.Count();
 
         // Serialize and store filteredBeliefs in session storage
-        filteredBeliefsJson = JsonSerializer.Serialize(filteredBeliefs);
-        await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "filteredBeliefs", filteredBeliefsJson);
+        await BeliefResponseService.SaveFilteredBeliefs(filteredBeliefs);
     }
+
 
     /// <summary>
     /// Handles the selection of an option for a belief.
@@ -169,14 +187,18 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
         try
         {
             UpdateBeliefResponse(option.Belief, option.SelectedValue);
-            if (beliefResponses.Count() < filteredBeliefs.Length - 1)
+
+            if (currentIndex < filteredBeliefs.Count() - 1)
             {
                 MoveNext();
             }
-            else
+            else if (currentIndex == filteredBeliefs.Count() - 1)
             {
+                // Automatically navigate to the summary page when all questions are answered
                 await NavigateToSummary();
             }
+            // Store beliefResponses in session storage immediately after update
+            await BeliefResponseService.UpdateBeliefResponses(beliefResponses);
             await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
@@ -185,6 +207,8 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
             Console.WriteLine($"Error handling option selected: {ex.Message}");
         }
     }
+
+
 
     /// <summary>
     /// Handles the selection of a belief number.
@@ -248,7 +272,7 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
     {
         try
         {
-            await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "beliefResponses", JsonSerializer.Serialize(beliefResponses));
+            await BeliefResponseService.SaveBeliefResponses(beliefResponses);
             NavManager.NavigateTo("/summary");
         }
         catch (Exception ex)
@@ -257,4 +281,5 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
             Console.WriteLine($"Error navigating to summary: {ex.Message}");
         }
     }
+
 }
