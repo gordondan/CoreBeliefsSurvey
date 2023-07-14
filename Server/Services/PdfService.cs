@@ -68,7 +68,6 @@ namespace CoreBeliefsSurvey.Server.Services
 
                 if ((i + 1) % beliefsPerPage == 0 || i == beliefsList.Count - 1)
                 {
-                    // Draw border for beliefs at the end of each page or for the last belief
                     DrawBeliefsBorder(editor);
                 }
             }
@@ -77,16 +76,12 @@ namespace CoreBeliefsSurvey.Server.Services
         }
         private static void DrawBeliefsBorder(FixedContentEditor editor)
         {
-            double padding = 10; // Define the padding for the rectangle
-            double rectWidth = 550 - defaultLeftIndent + 2 * padding; // full width of page minus left indent plus padding
-            double rectHeight = beliefsPerPage * (beliefHeight + beliefSpacing) + padding; // height to cover all beliefs plus padding
-
             editor.GraphicProperties.StrokeColor = new RgbColor(0, 0, 0); // Black
             editor.GraphicProperties.StrokeThickness = 1; // Thickness for the border
             editor.GraphicProperties.IsStroked = true; // Enable stroking (drawing the outline)
             editor.GraphicProperties.IsFilled = false; // Disable filling
-
-            editor.DrawRectangle(new Rect(-padding, -beliefSpacing / 2 - padding, rectWidth, rectHeight));
+            editor.Position.Translate(0, 0);
+            editor.DrawRectangle(new Rect(40,80, 525, 650));
         }
 
         private void DrawHeader(FixedContentEditor editor, double pageWidth)
@@ -105,11 +100,11 @@ namespace CoreBeliefsSurvey.Server.Services
 
             Block block = new Block();
             block.TextProperties.Font = FontsRepository.Helvetica;
-            block.TextProperties.FontSize = fontSize;
-            block.InsertText("Core Beliefs Survey Results");
+            block.TextProperties.FontSize = fontSize*3;
+            block.InsertText("Core Beliefs Survey");
 
             Size blockSize = block.ActualSize;
-            double textLeftOffset = (rectWidth - blockSize.Width) / 2;
+            double textLeftOffset = 80;
             double textTopOffset = (rectHeight - blockSize.Height) / 2;
 
             editor.Position.Translate(textLeftOffset, textTopOffset);
@@ -136,7 +131,7 @@ namespace CoreBeliefsSurvey.Server.Services
             Size blockSize = block.ActualSize;
             double textLeftOffset = (page.Size.Width - blockSize.Width) / 2;
             double textTopOffset = page.Size.Height - defaultTopOffset / 2;
-            editor.Position.Translate(textLeftOffset, textTopOffset);
+            editor.Position.Translate(textLeftOffset-50, textTopOffset);
 
             editor.DrawBlock(block);
         }
