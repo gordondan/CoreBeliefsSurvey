@@ -51,19 +51,12 @@ namespace CoreBeliefsSurvey.Server.Services
             {
                 if (i % beliefsPerPage == 0)
                 {
-                    if (page != null)
-                    {
-                        // Draw border for beliefs on previous page
-                        DrawBeliefsBorder(editor);
-                    }
-
                     page = document.Pages.AddPage();
                     page.Size = new Size(600, 750);
 
                     editor = new FixedContentEditor(page);
                     editor.TextProperties.FontSize = 14;
 
-                    // Add header and footer
                     DrawHeader(editor, 600);
                     AddFooter(page, i / beliefsPerPage + 1, (beliefsList.Count - 1) / beliefsPerPage + 1);
                 }
@@ -72,17 +65,16 @@ namespace CoreBeliefsSurvey.Server.Services
                 editor.Position.Translate(defaultLeftIndent, currentTopOffset);
 
                 DrawBelief(editor, beliefsList[i], defaultLeftIndent, currentTopOffset);
-            }
 
-            // Draw border for beliefs on last page
-            if (page != null)
-            {
-                DrawBeliefsBorder(editor);
+                if ((i + 1) % beliefsPerPage == 0 || i == beliefsList.Count - 1)
+                {
+                    // Draw border for beliefs at the end of each page or for the last belief
+                    DrawBeliefsBorder(editor);
+                }
             }
 
             return document;
         }
-
         private static void DrawBeliefsBorder(FixedContentEditor editor)
         {
             double padding = 10; // Define the padding for the rectangle
@@ -99,40 +91,30 @@ namespace CoreBeliefsSurvey.Server.Services
 
         private void DrawHeader(FixedContentEditor editor, double pageWidth)
         {
-            double rectWidth = pageWidth - 2 * defaultLeftIndent; // the width of the rectangle
-            double rectHeight = 50; // or any desired height for your rectangle
+            double rectWidth = pageWidth - 2 * defaultLeftIndent;
+            double rectHeight = 50;
             double leftOffset = defaultLeftIndent;
             double topOffset = defaultTopOffset / 2 - rectHeight / 2;
 
-            // Set graphic properties for the rectangle
-            editor.GraphicProperties.FillColor = new RgbColor(192, 192, 192); // gray color
-            editor.GraphicProperties.StrokeThickness = 0; // remove the border
+            editor.GraphicProperties.FillColor = new RgbColor(192, 192, 192);
+            editor.GraphicProperties.StrokeThickness = 0;
+            editor.GraphicProperties.IsStroked = false;
 
-            // Draw the gray rectangle at the center top of the page
             editor.Position.Translate(leftOffset, topOffset);
             editor.DrawRectangle(new Rect(0, 0, rectWidth, rectHeight));
 
-            // Insert header text
             Block block = new Block();
             block.TextProperties.Font = FontsRepository.Helvetica;
             block.TextProperties.FontSize = fontSize;
-            //block.TextProperties.Fill = new RgbColor(255, 255, 255); // white color
             block.InsertText("Core Beliefs Survey Results");
 
-            // The size of the text block
             Size blockSize = block.ActualSize;
-
-            // Calculate the position to place the block at the center of the rectangle
             double textLeftOffset = (rectWidth - blockSize.Width) / 2;
             double textTopOffset = (rectHeight - blockSize.Height) / 2;
 
-            // Position the block within the rectangle
-            //block.Position.Translate(textLeftOffset, textTopOffset);
-
-            // Draw the text block
+            editor.Position.Translate(textLeftOffset, textTopOffset);
             editor.DrawBlock(block);
         }
-
 
         private Telerik.Windows.Documents.Fixed.Model.Resources.ImageSource LoadImage(string path)
         {
@@ -142,15 +124,20 @@ namespace CoreBeliefsSurvey.Server.Services
             }
         }
 
-
         private static void AddFooter(RadFixedPage page, int pageNumber, int totalPages)
         {
             // Add footer text
             FixedContentEditor editor = new FixedContentEditor(page);
-            editor.Position.Translate(page.Size.Width / 2, page.Size.Height - defaultTopOffset / 2);
             Block block = new Block();
-            block.GraphicProperties.IsFilled = false;
+            block.GraphicProperties.IsStroked = false;
+            block.GraphicProperties.StrokeThickness = 0;
             block.InsertText($"Page {pageNumber} of {totalPages}");
+
+            Size blockSize = block.ActualSize;
+            double textLeftOffset = (page.Size.Width - blockSize.Width) / 2;
+            double textTopOffset = page.Size.Height - defaultTopOffset / 2;
+            editor.Position.Translate(textLeftOffset, textTopOffset);
+
             editor.DrawBlock(block);
         }
 
