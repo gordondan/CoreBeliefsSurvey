@@ -51,7 +51,7 @@ namespace PdfGenerationTest
 
             var mockBeliefs = CreateMockBeliefs(numberOfBeliefs);
 
-            var result = await pdfController.CreatePdf(mockBeliefs);
+            var result = await pdfController.GeneratePdf(mockBeliefs);
 
             if (result is FileContentResult fileResult)
             {
