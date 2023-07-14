@@ -25,7 +25,7 @@ if (string.IsNullOrEmpty(connectionString))
 }
 
 // Create an instance of AppSettings
-var appSettings = new AppSettings { ConnectionString = connectionString, TableName = "Beliefs", BlobName = "BlobStorage" };
+var appSettings = new AppSettings { ConnectionString = connectionString, TableName = "Beliefs", BlobName = "result-storage" };
 
 // Add services to the container.
 builder.Services.AddSingleton(appSettings); // Inject AppSettings

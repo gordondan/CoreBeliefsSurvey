@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace CoreBeliefsSurvey.Server.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class PdfController : ControllerBase
     {
         private readonly PdfService _pdfService;

@@ -8,6 +8,7 @@ using CoreBeliefsSurvey.Server.Models;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 using CoreBeliefsSurvey.Server;
+using Microsoft.WindowsAzure.Storage;
 
 class Program
 {
@@ -38,8 +39,21 @@ class Program
                 return;
             }
 
+            if (CloudStorageAccount.TryParse(connectionString, out var storageAccount))
+            {
+            }
+            else
+            {
+                Console.WriteLine("Failed to parse connection string.");
+            }
+
             // Create an instance of AppSettings
-            var appSettings = new AppSettings { ConnectionString = connectionString, TableName = "Beliefs" };
+            var appSettings = new AppSettings { 
+                ConnectionString = connectionString, 
+                TableName = "Beliefs",
+                StorageAccountKey= storageAccount.Credentials.ExportBase64EncodedKey() ,
+                StorageAccountName= storageAccount.Credentials.AccountName 
+            };
 
             // Set up the dependency injection
             var serviceProvider = new ServiceCollection()

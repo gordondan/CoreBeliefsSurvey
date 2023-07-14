@@ -2,12 +2,14 @@
 
 @inject IJSRuntime JSRuntime
 @inject HttpClient Http
+@inject ILogger<Summary> _logger
 
 @using CoreBeliefsSurvey.Shared.Models
 @using Microsoft.AspNetCore.Components
 @using System.Text.Json
 @using System.IO;
 @using System.Text;
+@using Microsoft.Extensions.Logging;
 <style>
     .response-icon-container {
         display: flex;
@@ -226,22 +228,48 @@ else
         return text;
     }
 
+    /// <summary>
+    /// Handles the view PDF button click. It serializes the belief responses,
+    /// sends a POST request to the PDF generation API, and navigates to the
+    /// PDF viewer page with the generated PDF Id.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
     private async Task OnViewPdfButtonClick()
     {
-        string beliefsJson = JsonSerializer.Serialize(beliefResponses);
-        var content = new StringContent(beliefsJson, Encoding.UTF8, "application/json");
-        var response = await Http.PostAsync("/api/PdfGeneration", content);
+        try
+        {
+            string beliefsJson = JsonSerializer.Serialize(beliefResponses);
+            var content = new StringContent(beliefsJson, Encoding.UTF8, "application/json");
 
-        if (response.IsSuccessStatusCode)
-        {
-            var pdfId = await response.Content.ReadAsStringAsync();
-            NavManager.NavigateTo($"/pdfviewer/{pdfId}");
+            // Logging the start of the HTTP request
+            _logger.LogInformation("Starting POST request to /api/pdf");
+
+            var response = await Http.PostAsync("/api/pdf", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var pdfId = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation($"PDF generation successful. PDF ID: {pdfId}");
+
+                NavManager.NavigateTo($"/pdfviewer/{pdfId}");
+            }
+            else
+            {
+                // Error handling
+                var errorMessage = $"Failed to generate PDF. HTTP status code: {response.StatusCode}";
+                _logger.LogError(errorMessage);
+                // Display an error message to the user or try to recover from the error appropriately
+            }
         }
-        else
+        catch (Exception ex)
         {
-            // Handle error
+            // Log the exception and handle it
+            _logger.LogError(ex, "An error occurred while trying to view the PDF.");
+            // Handle the exception in a way that is appropriate for your application,
+            // such as showing an error message to the user or trying to recover from the error
         }
     }
+
 
 
    private void NavigateToIndex()

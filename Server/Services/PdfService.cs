@@ -1,5 +1,8 @@
-﻿using Azure.Storage.Blobs;
+﻿using Azure.Storage;
+using Azure.Storage.Blobs;
+using Azure.Storage.Sas;
 using CoreBeliefsSurvey.Shared.Models;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -30,10 +33,12 @@ namespace CoreBeliefsSurvey.Server.Services
         private readonly BlobServiceClient _blobServiceClient;
 
         private readonly AppSettings _appSettings;
-        public PdfService(AppSettings appSettings)
+        private ILogger<PdfService> _logger;
+        public PdfService(AppSettings appSettings,ILogger<PdfService> logger)
         {
             _appSettings = appSettings;
             _blobServiceClient = new BlobServiceClient(_appSettings.ConnectionString);
+            _logger = logger;
         }
 
         public async Task<string> GenerateFileAndUpload(List<CoreBeliefResponse> beliefsList,Guid blobName)
@@ -53,27 +58,99 @@ namespace CoreBeliefsSurvey.Server.Services
             return await SavePdfToBlob(renderedBytes, blobName);
         }
 
+        /// <summary>
+        /// Saves a PDF to a blob container.
+        /// </summary>
+        /// <param name="pdfData">The byte array representing the PDF data.</param>
+        /// <param name="blobName">The unique identifier for the blob.</param>
+        /// <returns>The URI to the uploaded PDF if successful, otherwise null.</returns>
         public async Task<string> SavePdfToBlob(byte[] pdfData, Guid blobName)
         {
-            // Get a reference to a container
-            BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient(_appSettings.BlobName);
-
-            // Create the container if it does not exist.
-            await containerClient.CreateIfNotExistsAsync();
-
-            // Get a reference to a blob
-            BlobClient blobClient = containerClient.GetBlobClient(blobName.ToString());
-
-            using (var ms = new MemoryStream(pdfData))
+            try
             {
+                // Get a reference to a container
+                BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient(_appSettings.BlobName);
+
+                // Check if containerClient is null
+                if (containerClient == null)
+                {
+                    _logger.LogError($"Container client for {_appSettings.BlobName} could not be created");
+                    return null;
+                }
+
+                // Create the container if it does not exist
+                await containerClient.CreateIfNotExistsAsync();
+
+                // Get a reference to a blob
+                BlobClient blobClient = containerClient.GetBlobClient(blobName.ToString());
+
+                // Check if blobClient is null
+                if (blobClient == null)
+                {
+                    _logger.LogError($"Blob client for {blobName} could not be created");
+                    return null;
+                }
+
                 // Upload blob
-                await blobClient.UploadAsync(ms, true);
+                using (var ms = new MemoryStream(pdfData))
+                {
+                    await blobClient.UploadAsync(ms, true);
+                }
+
+                // Check if blob upload was successful by verifying if the blob exists
+                var blobExists = await blobClient.ExistsAsync();
+
+                if (!blobExists)
+                {
+                    _logger.LogError($"Blob {blobName} could not be uploaded");
+                    return null;
+                }
+
+                // Return the URI to the uploaded PDF
+                _logger.LogInformation($"Blob {blobName} uploaded successfully");
+
+                var sasBuilder = new BlobSasBuilder
+                {
+                    BlobContainerName = containerClient.Name,
+                    BlobName = blobClient.Name,
+                    Resource = "b", // b for blob
+                    ExpiresOn = DateTimeOffset.UtcNow.AddHours(24) // SAS token will be valid for 24 hours
+                };
+
+                sasBuilder.SetPermissions(BlobSasPermissions.Read); // Grant read permissions
+
+                var sasUrl = GetSasUrl(containerClient,blobClient,$"{blobClient.Uri}");
+
+                return sasUrl;
+                //return blobClient.Uri.ToString();
             }
-
-            // Return the URI to the uploaded PDF
-            return blobClient.Uri.ToString();
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while trying to save the PDF to the blob.");
+                return null;
+            }
         }
+        private string GetSasUrl(BlobContainerClient containerClient, BlobClient blobClient,string url) {
+            var storageAccountName = _appSettings.StorageAccountName;
+            var storageAccountKey = _appSettings.StorageAccountKey;
 
+            var storageSharedKeyCredential = new StorageSharedKeyCredential(storageAccountName, storageAccountKey);
+
+            var sasBuilder = new BlobSasBuilder
+            {
+                BlobContainerName = containerClient.Name,
+                BlobName = blobClient.Name,
+                Resource = "b", // b for blob
+                ExpiresOn = DateTimeOffset.UtcNow.AddHours(1) // SAS token will be valid for 1 hour
+            };
+
+            sasBuilder.SetPermissions(BlobSasPermissions.Read); // Grant read permissions
+
+            var sasToken = sasBuilder.ToSasQueryParameters(storageSharedKeyCredential).ToString();
+
+            var sasUrl = $"{blobClient.Uri}?{sasToken}"; // Append the SAS token to the blob URL
+            return sasUrl;
+        }
         private RadFixedDocument CreateDocument(List<CoreBeliefResponse> beliefsList)
         {
             RadFixedDocument document = new RadFixedDocument();
