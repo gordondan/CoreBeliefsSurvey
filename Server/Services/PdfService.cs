@@ -8,17 +8,20 @@ using Telerik.Windows.Documents.Fixed.Model;
 using Telerik.Windows.Documents.Fixed.Model.ColorSpaces;
 using Telerik.Windows.Documents.Fixed.Model.Editing;
 using Telerik.Windows.Documents.Fixed.Model.Fonts;
+using Telerik.Windows.Documents.Fixed.Model.Graphics;
+using Telerik.Windows.Documents.Flow.Model.Shapes;
+using Telerik.Windows.Documents.Media;
 
 namespace CoreBeliefsSurvey.Server.Services
 {
     public class PdfService
     {
         private static readonly double defaultLeftIndent = 50;
-        private static readonly double defaultTopOffset = 50;
+        private static readonly double defaultTopOffset = 100; // Double the top margin
         private static readonly double beliefHeight = 23;
         private static readonly double beliefSpacing = 10;
         private static readonly double beliefTextPadding = 5;
-        private static readonly int beliefsPerPage = 20;
+        private static readonly int beliefsPerPage = 18; // Adjusted beliefs per page
         private static readonly int fontSize = 16;
 
         public byte[] GenerateFile(List<CoreBeliefResponse> beliefsList)
@@ -42,26 +45,113 @@ namespace CoreBeliefsSurvey.Server.Services
             RadFixedDocument document = new RadFixedDocument();
 
             RadFixedPage page = null;
-            FixedContentEditor editor = null; // Declare the editor here
+            FixedContentEditor editor = null;
 
             for (int i = 0; i < beliefsList.Count; i++)
             {
                 if (i % beliefsPerPage == 0)
                 {
+                    if (page != null)
+                    {
+                        // Draw border for beliefs on previous page
+                        DrawBeliefsBorder(editor);
+                    }
+
                     page = document.Pages.AddPage();
                     page.Size = new Size(600, 750);
+
+                    editor = new FixedContentEditor(page);
+                    editor.TextProperties.FontSize = 14;
+
+                    // Add header and footer
+                    DrawHeader(editor, 600);
+                    AddFooter(page, i / beliefsPerPage + 1, (beliefsList.Count - 1) / beliefsPerPage + 1);
                 }
 
                 double currentTopOffset = defaultTopOffset + (i % beliefsPerPage) * (beliefHeight + beliefSpacing);
-
-                editor = new FixedContentEditor(page);
-                editor.TextProperties.FontSize = 14;
                 editor.Position.Translate(defaultLeftIndent, currentTopOffset);
 
                 DrawBelief(editor, beliefsList[i], defaultLeftIndent, currentTopOffset);
             }
 
+            // Draw border for beliefs on last page
+            if (page != null)
+            {
+                DrawBeliefsBorder(editor);
+            }
+
             return document;
+        }
+
+        private static void DrawBeliefsBorder(FixedContentEditor editor)
+        {
+            double padding = 10; // Define the padding for the rectangle
+            double rectWidth = 550 - defaultLeftIndent + 2 * padding; // full width of page minus left indent plus padding
+            double rectHeight = beliefsPerPage * (beliefHeight + beliefSpacing) + padding; // height to cover all beliefs plus padding
+
+            editor.GraphicProperties.StrokeColor = new RgbColor(0, 0, 0); // Black
+            editor.GraphicProperties.StrokeThickness = 1; // Thickness for the border
+            editor.GraphicProperties.IsStroked = true; // Enable stroking (drawing the outline)
+            editor.GraphicProperties.IsFilled = false; // Disable filling
+
+            editor.DrawRectangle(new Rect(-padding, -beliefSpacing / 2 - padding, rectWidth, rectHeight));
+        }
+
+        private void DrawHeader(FixedContentEditor editor, double pageWidth)
+        {
+            double rectWidth = pageWidth - 2 * defaultLeftIndent; // the width of the rectangle
+            double rectHeight = 50; // or any desired height for your rectangle
+            double leftOffset = defaultLeftIndent;
+            double topOffset = defaultTopOffset / 2 - rectHeight / 2;
+
+            // Set graphic properties for the rectangle
+            editor.GraphicProperties.FillColor = new RgbColor(192, 192, 192); // gray color
+            editor.GraphicProperties.StrokeThickness = 0; // remove the border
+
+            // Draw the gray rectangle at the center top of the page
+            editor.Position.Translate(leftOffset, topOffset);
+            editor.DrawRectangle(new Rect(0, 0, rectWidth, rectHeight));
+
+            // Insert header text
+            Block block = new Block();
+            block.TextProperties.Font = FontsRepository.Helvetica;
+            block.TextProperties.FontSize = fontSize;
+            //block.TextProperties.Fill = new RgbColor(255, 255, 255); // white color
+            block.InsertText("Core Beliefs Survey Results");
+
+            // The size of the text block
+            Size blockSize = block.ActualSize;
+
+            // Calculate the position to place the block at the center of the rectangle
+            double textLeftOffset = (rectWidth - blockSize.Width) / 2;
+            double textTopOffset = (rectHeight - blockSize.Height) / 2;
+
+            // Position the block within the rectangle
+            //block.Position.Translate(textLeftOffset, textTopOffset);
+
+            // Draw the text block
+            editor.DrawBlock(block);
+        }
+
+
+        private Telerik.Windows.Documents.Fixed.Model.Resources.ImageSource LoadImage(string path)
+        {
+            using (FileStream stream = File.OpenRead(path))
+            {
+                return new Telerik.Windows.Documents.Fixed.Model.Resources.ImageSource(stream);
+            }
+        }
+
+
+        private static void AddFooter(RadFixedPage page, int pageNumber, int totalPages)
+        {
+            // Add footer text
+            FixedContentEditor editor = new FixedContentEditor(page);
+            editor.Position.Translate(page.Size.Width / 2, page.Size.Height - defaultTopOffset / 2);
+            Block block = new Block();
+            block.GraphicProperties.IsFilled = false;
+            block.InsertText($"Page {pageNumber} of {totalPages}");
+            editor.DrawBlock(block);
         }
 
 
