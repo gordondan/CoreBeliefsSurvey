@@ -41,8 +41,9 @@ namespace PdfGenerationTest
 
             // Create an instance of AppSettings
             var appSettings = new AppSettings { ConnectionString = connectionString, TableName = "Beliefs", BlobName = "BlobStorage" };
-            var pdfService = new PdfService(appSettings);
             var logger = new NullLogger<PdfController>();
+            var pdfServiceLogger = new NullLogger<PdfService>();
+            var pdfService = new PdfService(appSettings, pdfServiceLogger);
             var pdfController = new PdfController(pdfService,logger);
 
             Console.Write("Enter the number of beliefs to generate: ");
