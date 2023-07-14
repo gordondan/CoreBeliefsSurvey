@@ -13,3 +13,6 @@
 /Server/bin/Debug/net7.0
 /.vs/ProjectEvaluation
 /.vs
+/CoreBeliefsSurvery.Server.Test/bin/Debug/net7.0
+/CoreBeliefsSurvery.Server.Test/obj/Debug/net7.0
+/CoreBeliefsSurvery.Server.Test/obj
