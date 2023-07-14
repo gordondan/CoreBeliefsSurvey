@@ -1,10 +1,15 @@
 ﻿@page "/summary"
 
 @inject IJSRuntime JSRuntime
+@inject HttpClient Http
+@inject ILogger<Summary> _logger
+
 @using CoreBeliefsSurvey.Shared.Models
 @using Microsoft.AspNetCore.Components
 @using System.Text.Json
 @using System.IO;
+@using System.Text;
+@using Microsoft.Extensions.Logging;
 <style>
     .response-icon-container {
         display: flex;
@@ -90,6 +95,11 @@
     </TelerikGridLayout>
 
     <p>Questions answered: @beliefResponses.Count of @filteredBeliefs.Length</p>
+    <div class="btn-wrapper">
+        <TelerikButton OnClick="@OnViewPdfButtonClick">
+            <i class="fas fa-file-pdf"></i> View PDF
+        </TelerikButton>
+    </div>
 
     <button class="btn btn-primary" @onclick="NavigateToIndex">Go Back</button>
 }
@@ -217,6 +227,63 @@ else
 
         return text;
     }
+
+    /// <summary>
+    /// Handles the view PDF button click. It serializes the belief responses,
+    /// sends a POST request to the PDF generation API, and navigates to the
+    /// PDF viewer page with the generated PDF Id.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    private async Task OnViewPdfButtonClick()
+    {
+        try
+        {
+            string beliefsJson = JsonSerializer.Serialize(beliefResponses);
+            var content = new StringContent(beliefsJson, Encoding.UTF8, "application/json");
+
+            // Logging the start of the HTTP request
+            _logger.LogInformation("Starting POST request to /api/pdf");
+
+            var response = await Http.PostAsync("/api/pdf", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var pdfCreationResult = await response.Content.ReadFromJsonAsync<PdfCreationResult>();
+                _logger.LogInformation($"PDF generation result: Success: {pdfCreationResult.Success}, Message: {pdfCreationResult.Message}");
+
+                if (pdfCreationResult.Success)
+                {
+                    _logger.LogInformation($"PDF generation successful. PDF URL: {pdfCreationResult.Url}");
+                    var encodedPdfUrl = Uri.EscapeDataString(pdfCreationResult.Url);
+                    NavManager.NavigateTo($"/pdfviewer/{encodedPdfUrl}");
+                }
+                else
+                {
+                    // Error handling when PDF generation fails
+                    var errorMessage = $"Failed to generate PDF. Message: {pdfCreationResult.Message}";
+                    _logger.LogError(errorMessage);
+                    // Display an error message to the user or try to recover from the error appropriately
+                }
+            }
+            else
+            {
+                // Error handling for unsuccessful HTTP response
+                var errorMessage = $"Failed to generate PDF. HTTP status code: {response.StatusCode}";
+                _logger.LogError(errorMessage);
+                // Display an error message to the user or try to recover from the error appropriately
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log the exception and handle it
+            _logger.LogError(ex, "An error occurred while trying to view the PDF.");
+            // Handle the exception in a way that is appropriate for your application,
+            // such as showing an error message to the user or trying to recover from the error
+        }
+    }
+
+
+
 
    private void NavigateToIndex()
     {

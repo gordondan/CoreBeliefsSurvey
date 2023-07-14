@@ -46,7 +46,6 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
     <p>Answered: @(beliefResponses.Count()) of @filteredBeliefs.Count()</p>
 
     <button class="btn btn-primary" @onclick="NavigateToSummary">Submit</button>
-    <button class="btn btn-primary" @onclick="RestartQuestions">Restart Questions</button>
 
 }
 
@@ -137,31 +136,6 @@ else if (selectedOption != null || (beliefResponses != null && beliefResponses.C
             Console.WriteLine($"Error loading beliefs: {ex.Message}");
         }
     }
-
-
-    /// <summary>
-    /// Restarts the survey by clearing all the responses and reloading the beliefs.
-    /// </summary>
-    private async Task RestartQuestions()
-    {
-        try
-        {
-            beliefResponses.Clear();
-            filteredBeliefs = allBeliefs; // Reset filteredBeliefs to initial value
-            selectedOption = null;
-            await BeliefResponseService.RemoveBeliefResponses();
-            await BeliefResponseService.RemoveFilteredBeliefs();
-            await LoadBeliefs();
-            await InvokeAsync(StateHasChanged); // Update the component
-        }
-        catch (Exception ex)
-        {
-            // Handle the error, log, or display an error message
-            Console.WriteLine($"Error restarting questions: {ex.Message}");
-        }
-    }
-
-
 
     /// <summary>
     /// Filters the beliefs based on the selected option.

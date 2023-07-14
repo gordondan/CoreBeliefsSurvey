@@ -7,20 +7,17 @@ using Microsoft.Extensions.Hosting;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 using System;
+using Microsoft.WindowsAzure.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Get the connection string from Azure Key Vault
 var keyVaultUrl = "https://core-beliefs-vault.vault.azure.net/";
-var connectionStringSecretName = "ConnectionString";
+var tableConnectionStringName = "ConnectionString";
 var credential = new DefaultAzureCredential();
-var client = new SecretClient(new Uri(keyVaultUrl), credential);
-Console.WriteLine($"AZURE_TENANT_ID: {Environment.GetEnvironmentVariable("AZURE_TENANT_ID")}");
-Console.WriteLine($"AZURE_CLIENT_ID: {Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")}");
-// Don't log the secret, this is just for testing. Never log secrets in a real application.
-Console.WriteLine($"AZURE_CLIENT_SECRET: {Environment.GetEnvironmentVariable("AZURE_CLIENT_SECRET")}");
+var secretClient = new SecretClient(new Uri(keyVaultUrl), credential);
 
-var secret = await client.GetSecretAsync(connectionStringSecretName);
+var secret = await secretClient.GetSecretAsync(tableConnectionStringName);
 var connectionString = secret.Value?.Value;
 
 if (string.IsNullOrEmpty(connectionString))
@@ -28,12 +25,20 @@ if (string.IsNullOrEmpty(connectionString))
     throw new InvalidOperationException("Failed to retrieve the Azure Storage connection string from Azure Key Vault.");
 }
 
-// Create an instance of AppSettings
-var appSettings = new AppSettings { DefaultConnectionString = connectionString, TableName = "Beliefs" };
-
+var appSettings = new AppSettings { ConnectionString = connectionString, TableName = "Beliefs", BlobName = "result-storage" };
+if (CloudStorageAccount.TryParse(connectionString, out var storageAccount))
+{
+    appSettings.StorageAccountKey = storageAccount.Credentials.ExportBase64EncodedKey();
+    appSettings.StorageAccountName = storageAccount.Credentials.AccountName;
+}
+else
+{
+    Console.WriteLine("Failed to parse connection string.");
+}
 // Add services to the container.
 builder.Services.AddSingleton(appSettings); // Inject AppSettings
 builder.Services.AddSingleton<BeliefService>();
+builder.Services.AddTransient<PdfService>();
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 

@@ -24,7 +24,7 @@ namespace CoreBeliefsSurvey.Server.Services
         public BeliefService(AppSettings appSettings)
         {
             _appSettings = appSettings;
-            connectionString = _appSettings.DefaultConnectionString;
+            connectionString = _appSettings.ConnectionString;
             tableName = _appSettings.TableName;
         }
 

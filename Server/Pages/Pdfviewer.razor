@@ -1,0 +1,19 @@
+﻿@page "/pdfviewer/{pdfId}"
+@inject PdfService PdfService
+@using CoreBeliefsSurvey.Server.Services;
+@using CoreBeliefsSurvey.Shared.Models
+@using System.Text.Json
+@using System.IO;
+@using Telerik.Blazor.Components.PdfViewer
+@using Telerik.Blazor.Components;
+
+<TelerikPdfViewer Width="800px" Height="600px" File="@pdfUrl"></TelerikPdfViewer>
+
+@code {
+    [Parameter]
+    public string pdfUrl { get; set; }
+
+    protected override void OnInitialized()
+    {
+    }
+}

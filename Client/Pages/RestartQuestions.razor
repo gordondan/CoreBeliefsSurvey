@@ -1,0 +1,23 @@
+﻿@using CoreBeliefsSurvey.Client.Services;
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@inject BeliefResponseService BeliefResponseService
+
+<button class="btn btn-primary" @onclick="RestartQuestionsClicked">Restart Questions</button>
+
+@code {
+    private async Task RestartQuestionsClicked()
+    {
+        try
+        {
+            await BeliefResponseService.RemoveBeliefResponses();
+            await BeliefResponseService.RemoveFilteredBeliefs();
+            NavManager.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            // Handle the error, log, or display an error message
+            Console.WriteLine($"Error restarting questions: {ex.Message}");
+        }
+    }
+}
