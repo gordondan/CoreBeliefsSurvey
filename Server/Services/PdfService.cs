@@ -2,6 +2,7 @@
 using Azure.Storage.Blobs;
 using Azure.Storage.Sas;
 using CoreBeliefsSurvey.Shared.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -41,7 +42,7 @@ namespace CoreBeliefsSurvey.Server.Services
             _logger = logger;
         }
 
-        public async Task<string> GenerateFileAndUpload(List<CoreBeliefResponse> beliefsList,Guid blobName)
+        public async Task<byte[]> GeneratePdf(List<CoreBeliefResponse> beliefsList)
         {
             PdfFormatProvider formatProvider = new PdfFormatProvider();
             formatProvider.ExportSettings.ImageQuality = ImageQuality.High;
@@ -54,9 +55,10 @@ namespace CoreBeliefsSurvey.Server.Services
                 renderedBytes = ms.ToArray();
             }
 
-            // Save PDF to Blob storage and return the blob's URI
-            return await SavePdfToBlob(renderedBytes,$"{blobName}.pdf");
+            return renderedBytes; // this should return the bytes, not a FileStreamResult
         }
+
+
 
         /// <summary>
         /// Saves a PDF to a blob container.

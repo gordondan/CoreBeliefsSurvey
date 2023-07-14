@@ -10,6 +10,8 @@
 @using System.IO;
 @using System.Text;
 @using Microsoft.Extensions.Logging;
+@using Telerik.SvgIcons
+
 <style>
     .response-icon-container {
         display: flex;
@@ -55,52 +57,35 @@
 
 <h3>Summary</h3>
 
-@if (beliefResponses != null)
+@if (GridData != null)
 {
-    <TelerikGridLayout>
-        <GridLayoutColumns>
-            <GridLayoutColumn Width="1fr"></GridLayoutColumn>
-            <GridLayoutColumn Width="7fr"></GridLayoutColumn>
-            <GridLayoutColumn Width="12fr"></GridLayoutColumn>
-        </GridLayoutColumns>
-        <GridLayoutRows>
-            <GridLayoutRow Height="auto"></GridLayoutRow>
-        </GridLayoutRows>
-        <GridLayoutItems>
-            @foreach (var beliefResponse in beliefResponses)
-            {
-                var belief = beliefResponse.Belief;
-                var selectedValue = beliefResponse.SelectedValue;
-                var isPositive = belief.IsPositive;
+    <TelerikGrid Data=@GridData Pageable="true" Sortable="true"
+                 FilterMode="GridFilterMode.FilterMenu" Resizable="true" Reorderable="true" PageSize="25">
+        <GridToolBarTemplate>
+            <GridCommandButton Command="ExcelExport" Icon="@SvgIcon.FileExcel">Export to Excel</GridCommandButton>
+        </GridToolBarTemplate>
+        <GridExport>
+            <GridExcelExport FileName="summary-grid-export" AllPages="true" />
+        </GridExport>
+        <GridColumns>
+            <GridColumn Field="@nameof(GridDataRow.Positivity)" Title="Positivity" Width="5%" OnCellRender="@OnCellRenderHandler" />
+            <GridColumn Field="@nameof(GridDataRow.Icon)" Title="" Width="5%" />
+            <GridColumn Field="@nameof(GridDataRow.Belief)" Title="Belief" Width="60%" />
+            <GridColumn Field="@nameof(GridDataRow.SelectedValueText)" Title="Response" Width="30%" />
+        </GridColumns>
+    </TelerikGrid>
 
-                <GridLayoutItem>
-                    <div class="response-icon-container @GetBackgroundColorClass(selectedValue,belief.IsPositive)">
-                        @GetResponseIcon(selectedValue, isPositive)
-                    </div>
-                </GridLayoutItem>
 
-                <GridLayoutItem>
-                    <div class="belief-info">
-                        <div class="belief-name" title="@belief.BeliefDescription">
-                            <span>@belief.BeliefName</span>
-                            <i class="far fa-question-circle question-mark-icon" title="@belief.BeliefDescription"></i>
-                        </div>
-                    </div>
-                </GridLayoutItem>
-                <GridLayoutItem>
-                    <div class="response-text">@GetResponseText(selectedValue)</div>
-                </GridLayoutItem>
-            }
-        </GridLayoutItems>
-    </TelerikGridLayout>
 
-    <p>Questions answered: @beliefResponses.Count of @filteredBeliefs.Length</p>
+    <br/>
+
     <div class="btn-wrapper">
         <TelerikButton OnClick="@OnViewPdfButtonClick">
             <i class="fas fa-file-pdf"></i> View PDF
         </TelerikButton>
     </div>
-
+    <br/>
+    <br/>
     <button class="btn btn-primary" @onclick="NavigateToIndex">Go Back</button>
 }
 else
@@ -109,8 +94,9 @@ else
 }
 
 @code {
-    private List<CoreBeliefResponse> beliefResponses;
     private CoreBelief[] filteredBeliefs;
+    private List<GridDataRow> GridData;
+    private List<CoreBeliefResponse> beliefResponses;
 
     [Inject]
     private NavigationManager NavManager { get; set; }
@@ -120,76 +106,13 @@ else
         var beliefResponsesJson = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "beliefResponses");
         if (!string.IsNullOrEmpty(beliefResponsesJson))
             beliefResponses = JsonSerializer.Deserialize<List<CoreBeliefResponse>>(beliefResponsesJson);
-
-        filteredBeliefs = beliefResponses?.Select(response => response.Belief).ToArray();
-    }
-
-    private string GetBackgroundColorClass(int selectedValue, bool isPositive)
-    {
-        int happyValue = isPositive ? selectedValue : 6 - selectedValue;
-
-        switch (happyValue)
-        {
-            case 1:
-                return "red"; // Red background color
-            case 2:
-                return "orange"; // Orange background color
-            case 3:
-                return "white"; // White background color
-            case 4:
-                return "yellow"; // Yellow background color
-            case int value when value >= 5:
-                return "green"; // Green background color
-            default:
-                return string.Empty;
-        }
-    }
-
-
-
-    /// <summary>
-    /// Returns the response icon markup based on the selected value and positivity.
-    /// </summary>
-    /// <param name="selectedValue">The selected value.</param>
-    /// <param name="isPositive">Indicates whether the belief is positive.</param>
-    /// <returns>The response icon markup.</returns>
-    private MarkupString GetResponseIcon(int selectedValue, bool isPositive)
-    {
-        string icon = string.Empty;
-        int happyValue = isPositive ? selectedValue : 6 - selectedValue;
-
-        try
-        {
-            switch (happyValue)
+        GridData = beliefResponses.Select(response => new GridDataRow
             {
-                case 1:
-                    icon = "<i class=\"far fa-frown-open\"></i>";
-                    break;
-                case 2:
-                    icon = "<i class=\"far fa-frown\"></i>";
-                    break;
-                case 3:
-                    icon = "<i class=\"far fa-meh\"></i>";
-                    break;
-                case 4:
-                    icon = "<i class=\"far fa-smile\"></i>";
-                    break;
-                case int value when value >= 5:
-                    icon = "<i class=\"far fa-smile-beam\"></i>";
-                    break;
-                default:
-                    // Handle invalid happyValue
-                    LogError($"Invalid happyValue: {happyValue}");
-                    break;
-            }
-        }
-        catch (Exception ex)
-        {
-            // Handle any exception that might occur
-            LogError($"An error occurred: {ex.Message}");
-        }
-
-        return new MarkupString(icon);
+                Belief = response.Belief.BeliefName,
+                IsPositive = response.Belief.IsPositive,
+                SelectedValue = response.SelectedValue
+            }).ToList();
+        filteredBeliefs = beliefResponses?.Select(response => response.Belief).ToArray();
     }
 
     private void LogError(string errorMessage)
@@ -200,33 +123,7 @@ else
     }
 
 
-    private string GetResponseText(int selectedValue)
-    {
-        string text = string.Empty;
 
-        if (selectedValue == 1)
-        {
-            text = "Disagree";
-        }
-        else if (selectedValue == 2)
-        {
-            text = "Somewhat Disagree";
-        }
-        else if (selectedValue == 3)
-        {
-            text = "Neutral";
-        }
-        else if (selectedValue == 4)
-        {
-            text = "Somewhat Agree";
-        }
-        else if (selectedValue == 5)
-        {
-            text = "Agree";
-        }
-
-        return text;
-    }
 
     /// <summary>
     /// Handles the view PDF button click. It serializes the belief responses,
@@ -248,22 +145,16 @@ else
 
             if (response.IsSuccessStatusCode)
             {
-                var pdfCreationResult = await response.Content.ReadFromJsonAsync<PdfCreationResult>();
-                _logger.LogInformation($"PDF generation result: Success: {pdfCreationResult.Success}, Message: {pdfCreationResult.Message}");
-
-                if (pdfCreationResult.Success)
+                var stream = await response.Content.ReadAsStreamAsync();
+                byte[] pdfBytes;
+                using (var memoryStream = new MemoryStream())
                 {
-                    _logger.LogInformation($"PDF generation successful. PDF URL: {pdfCreationResult.Url}");
-                    var encodedPdfUrl = Uri.EscapeDataString(pdfCreationResult.Url);
-                    NavManager.NavigateTo($"/pdfviewer/{encodedPdfUrl}");
+                    await stream.CopyToAsync(memoryStream);
+                    pdfBytes = memoryStream.ToArray();
                 }
-                else
-                {
-                    // Error handling when PDF generation fails
-                    var errorMessage = $"Failed to generate PDF. Message: {pdfCreationResult.Message}";
-                    _logger.LogError(errorMessage);
-                    // Display an error message to the user or try to recover from the error appropriately
-                }
+                var pdfBase64 = Convert.ToBase64String(pdfBytes);
+                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "pdfData", pdfBase64);
+                NavManager.NavigateTo("/pdfviewer");
             }
             else
             {
@@ -282,6 +173,40 @@ else
         }
     }
 
+    public void OnCellRenderHandler(GridCellRenderEventArgs args)
+    {
+        // Check for the positivity value
+        if (int.TryParse(args.Value?.ToString(), out int positivity))
+        {
+            switch (positivity)
+            {
+                case 1:
+                    args.Class = "red";
+                    break;
+                case 2:
+                    args.Class = "orange";
+                    break;
+                case 3:
+                    args.Class = "black";
+                    break;
+                case 4:
+                    args.Class = "yellow";
+                    break;
+                case 5:
+                    args.Class = "green";
+                    break;
+                default:
+                // If neutral, color is black
+                args.Class = "black";
+                break;
+            }
+        }
+        else
+        {
+            // If parsing fails, color is black
+            args.Class = "neutral";
+        }
+    }
 
 
 
