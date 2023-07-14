@@ -1,0 +1,41 @@
+﻿@page "/pdfviewer/{EncodedPdfUrl}"
+@inject HttpClient Http
+@using Telerik.Blazor.Components.PdfViewer
+@using Telerik.Blazor.Components
+
+@if (isLoading)
+{
+    <TelerikLoader Type="LoaderType.ConvergingSpinner" />
+}
+else if (PdfData != null)
+{
+    <TelerikPdfViewer Width="100%" Height="100%" Data="@PdfData"></TelerikPdfViewer>
+}
+
+@code {
+    [Parameter]
+    public string EncodedPdfUrl { get; set; }
+
+    public string PdfUrl { get; set; }
+    public byte[] PdfData { get; set; }
+    public bool isLoading { get; set; } = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // URL decode the received parameter to get the original PDF URL
+        PdfUrl = Uri.UnescapeDataString(EncodedPdfUrl);
+
+        // Fetch the PDF data from the URL
+        HttpResponseMessage response = await Http.GetAsync(PdfUrl);
+        if (response.IsSuccessStatusCode)
+        {
+            PdfData = await response.Content.ReadAsByteArrayAsync();
+        }
+        else
+        {
+            PdfData = null;
+        }
+
+        isLoading = false;
+    }
+}

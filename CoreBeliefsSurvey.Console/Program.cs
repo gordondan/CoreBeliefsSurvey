@@ -38,9 +38,15 @@ class Program
                 Console.WriteLine("Failed to retrieve the Azure Storage connection string from Azure Key Vault.");
                 return;
             }
-
+            var appSettings = new AppSettings
+            {
+                ConnectionString = connectionString,
+                TableName = "Beliefs"
+            };
             if (CloudStorageAccount.TryParse(connectionString, out var storageAccount))
             {
+                appSettings.StorageAccountKey = storageAccount.Credentials.ExportBase64EncodedKey();
+                appSettings.StorageAccountName = storageAccount.Credentials.AccountName;
             }
             else
             {
@@ -48,12 +54,7 @@ class Program
             }
 
             // Create an instance of AppSettings
-            var appSettings = new AppSettings { 
-                ConnectionString = connectionString, 
-                TableName = "Beliefs",
-                StorageAccountKey= storageAccount.Credentials.ExportBase64EncodedKey() ,
-                StorageAccountName= storageAccount.Credentials.AccountName 
-            };
+
 
             // Set up the dependency injection
             var serviceProvider = new ServiceCollection()

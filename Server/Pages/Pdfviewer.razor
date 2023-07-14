@@ -11,13 +11,9 @@
 
 @code {
     [Parameter]
-    public string pdfId { get; set; }
-
-    private string pdfUrl;
+    public string pdfUrl { get; set; }
 
     protected override void OnInitialized()
     {
-        // Add '.pdf' extension to the provided pdfId
-        pdfUrl = $"{pdfId}.pdf";
     }
 }

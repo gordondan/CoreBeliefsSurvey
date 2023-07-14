@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 using System;
+using Microsoft.WindowsAzure.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,9 +25,16 @@ if (string.IsNullOrEmpty(connectionString))
     throw new InvalidOperationException("Failed to retrieve the Azure Storage connection string from Azure Key Vault.");
 }
 
-// Create an instance of AppSettings
 var appSettings = new AppSettings { ConnectionString = connectionString, TableName = "Beliefs", BlobName = "result-storage" };
-
+if (CloudStorageAccount.TryParse(connectionString, out var storageAccount))
+{
+    appSettings.StorageAccountKey = storageAccount.Credentials.ExportBase64EncodedKey();
+    appSettings.StorageAccountName = storageAccount.Credentials.AccountName;
+}
+else
+{
+    Console.WriteLine("Failed to parse connection string.");
+}
 // Add services to the container.
 builder.Services.AddSingleton(appSettings); // Inject AppSettings
 builder.Services.AddSingleton<BeliefService>();

@@ -55,7 +55,7 @@ namespace CoreBeliefsSurvey.Server.Services
             }
 
             // Save PDF to Blob storage and return the blob's URI
-            return await SavePdfToBlob(renderedBytes, blobName);
+            return await SavePdfToBlob(renderedBytes,$"{blobName}.pdf");
         }
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace CoreBeliefsSurvey.Server.Services
         /// <param name="pdfData">The byte array representing the PDF data.</param>
         /// <param name="blobName">The unique identifier for the blob.</param>
         /// <returns>The URI to the uploaded PDF if successful, otherwise null.</returns>
-        public async Task<string> SavePdfToBlob(byte[] pdfData, Guid blobName)
+        public async Task<string> SavePdfToBlob(byte[] pdfData, string blobName)
         {
             try
             {

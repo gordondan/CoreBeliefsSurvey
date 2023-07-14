@@ -248,14 +248,26 @@ else
 
             if (response.IsSuccessStatusCode)
             {
-                var pdfId = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation($"PDF generation successful. PDF ID: {pdfId}");
+                var pdfCreationResult = await response.Content.ReadFromJsonAsync<PdfCreationResult>();
+                _logger.LogInformation($"PDF generation result: Success: {pdfCreationResult.Success}, Message: {pdfCreationResult.Message}");
 
-                NavManager.NavigateTo($"/pdfviewer/{pdfId}");
+                if (pdfCreationResult.Success)
+                {
+                    _logger.LogInformation($"PDF generation successful. PDF URL: {pdfCreationResult.Url}");
+                    var encodedPdfUrl = Uri.EscapeDataString(pdfCreationResult.Url);
+                    NavManager.NavigateTo($"/pdfviewer/{encodedPdfUrl}");
+                }
+                else
+                {
+                    // Error handling when PDF generation fails
+                    var errorMessage = $"Failed to generate PDF. Message: {pdfCreationResult.Message}";
+                    _logger.LogError(errorMessage);
+                    // Display an error message to the user or try to recover from the error appropriately
+                }
             }
             else
             {
-                // Error handling
+                // Error handling for unsuccessful HTTP response
                 var errorMessage = $"Failed to generate PDF. HTTP status code: {response.StatusCode}";
                 _logger.LogError(errorMessage);
                 // Display an error message to the user or try to recover from the error appropriately
@@ -269,6 +281,7 @@ else
             // such as showing an error message to the user or trying to recover from the error
         }
     }
+
 
 
 

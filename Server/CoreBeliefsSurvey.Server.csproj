@@ -12,6 +12,7 @@
     <PackageReference Include="Telerik.Documents.Core" Version="2023.2.519" />
     <PackageReference Include="Telerik.Documents.Fixed" Version="2023.2.519" />
     <PackageReference Include="Telerik.Windows.Documents.Flow" Version="2023.2.519" />
+    <PackageReference Include="WindowsAzure.Storage" Version="9.3.3" />
   </ItemGroup>
   
   <ItemGroup>

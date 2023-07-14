@@ -1,0 +1,9 @@
+﻿html, body {
+    height: 100%;
+}
+
+/* You may need to adjust this selector to target the container of your PDF viewer */
+#pdf-viewer-container {
+    height: 100%;
+}
+
