@@ -1,10 +1,13 @@
 ﻿@page "/summary"
 
 @inject IJSRuntime JSRuntime
+@inject HttpClient Http
+
 @using CoreBeliefsSurvey.Shared.Models
 @using Microsoft.AspNetCore.Components
 @using System.Text.Json
 @using System.IO;
+@using System.Text;
 <style>
     .response-icon-container {
         display: flex;
@@ -90,6 +93,11 @@
     </TelerikGridLayout>
 
     <p>Questions answered: @beliefResponses.Count of @filteredBeliefs.Length</p>
+    <div class="btn-wrapper">
+        <TelerikButton OnClick="@OnViewPdfButtonClick">
+            <i class="fas fa-file-pdf"></i> View PDF
+        </TelerikButton>
+    </div>
 
     <button class="btn btn-primary" @onclick="NavigateToIndex">Go Back</button>
 }
@@ -217,6 +225,24 @@ else
 
         return text;
     }
+
+    private async Task OnViewPdfButtonClick()
+    {
+        string beliefsJson = JsonSerializer.Serialize(beliefResponses);
+        var content = new StringContent(beliefsJson, Encoding.UTF8, "application/json");
+        var response = await Http.PostAsync("/api/PdfGeneration", content);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var pdfId = await response.Content.ReadAsStringAsync();
+            NavManager.NavigateTo($"/pdfviewer/{pdfId}");
+        }
+        else
+        {
+            // Handle error
+        }
+    }
+
 
    private void NavigateToIndex()
     {

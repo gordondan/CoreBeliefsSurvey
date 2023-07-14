@@ -2,7 +2,8 @@
 {
     public class AppSettings
     {
-        public string DefaultConnectionString { get; set; }
+        public string ConnectionString { get; set; }
         public string TableName { get;set; }
+        public string BlobName { get; set; }
     }
 }

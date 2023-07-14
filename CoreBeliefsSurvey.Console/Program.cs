@@ -39,7 +39,7 @@ class Program
             }
 
             // Create an instance of AppSettings
-            var appSettings = new AppSettings { DefaultConnectionString = connectionString, TableName = "Beliefs" };
+            var appSettings = new AppSettings { ConnectionString = connectionString, TableName = "Beliefs" };
 
             // Set up the dependency injection
             var serviceProvider = new ServiceCollection()

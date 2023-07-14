@@ -1,6 +1,9 @@
-﻿using CoreBeliefsSurvey.Shared.Models;
+﻿using Azure.Storage.Blobs;
+using CoreBeliefsSurvey.Shared.Models;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using Telerik.Documents.Primitives;
 using Telerik.Windows.Documents.Fixed.FormatProviders.Pdf;
 using Telerik.Windows.Documents.Fixed.FormatProviders.Pdf.Export;
@@ -24,7 +27,16 @@ namespace CoreBeliefsSurvey.Server.Services
         private static readonly int beliefsPerPage = 18; // Adjusted beliefs per page
         private static readonly int fontSize = 16;
 
-        public byte[] GenerateFile(List<CoreBeliefResponse> beliefsList)
+        private readonly BlobServiceClient _blobServiceClient;
+
+        private readonly AppSettings _appSettings;
+        public PdfService(AppSettings appSettings)
+        {
+            _appSettings = appSettings;
+            _blobServiceClient = new BlobServiceClient(_appSettings.ConnectionString);
+        }
+
+        public async Task<string> GenerateFileAndUpload(List<CoreBeliefResponse> beliefsList,Guid blobName)
         {
             PdfFormatProvider formatProvider = new PdfFormatProvider();
             formatProvider.ExportSettings.ImageQuality = ImageQuality.High;
@@ -37,7 +49,29 @@ namespace CoreBeliefsSurvey.Server.Services
                 renderedBytes = ms.ToArray();
             }
 
-            return renderedBytes;
+            // Save PDF to Blob storage and return the blob's URI
+            return await SavePdfToBlob(renderedBytes, blobName);
+        }
+
+        public async Task<string> SavePdfToBlob(byte[] pdfData, Guid blobName)
+        {
+            // Get a reference to a container
+            BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient(_appSettings.BlobName);
+
+            // Create the container if it does not exist.
+            await containerClient.CreateIfNotExistsAsync();
+
+            // Get a reference to a blob
+            BlobClient blobClient = containerClient.GetBlobClient(blobName.ToString());
+
+            using (var ms = new MemoryStream(pdfData))
+            {
+                // Upload blob
+                await blobClient.UploadAsync(ms, true);
+            }
+
+            // Return the URI to the uploaded PDF
+            return blobClient.Uri.ToString();
         }
 
         private RadFixedDocument CreateDocument(List<CoreBeliefResponse> beliefsList)

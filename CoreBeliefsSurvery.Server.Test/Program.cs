@@ -1,26 +1,56 @@
-﻿using CoreBeliefsSurvey.Server.Controllers;
+﻿using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
+using CoreBeliefsSurvey.Server;
+using CoreBeliefsSurvey.Server.Controllers;
 using CoreBeliefsSurvey.Server.Services;
 using CoreBeliefsSurvey.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
 
 namespace PdfGenerationTest
 {
+    class NullLogger<T> : ILogger<T>
+    {
+        public IDisposable BeginScope<TState>(TState state) => null;
+
+        public bool IsEnabled(LogLevel logLevel) => false;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter) { }
+    }
+
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-            var pdfService = new PdfService();
-            var pdfController = new PdfController(pdfService);
+                // Get the connection string from Azure Key Vault
+            var keyVaultUrl = "https://core-beliefs-vault.vault.azure.net/";
+            var tableConnectionStringName = "TableConnectionString";
+            var credential = new DefaultAzureCredential();
+            var secretClient = new SecretClient(new Uri(keyVaultUrl), credential);
+
+            var secret = await secretClient.GetSecretAsync(tableConnectionStringName);
+            var connectionString = secret.Value?.Value;
+
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                throw new InvalidOperationException("Failed to retrieve the Azure Storage connection string from Azure Key Vault.");
+            }
+
+            // Create an instance of AppSettings
+            var appSettings = new AppSettings { ConnectionString = connectionString, TableName = "Beliefs", BlobName = "BlobStorage" };
+            var pdfService = new PdfService(appSettings);
+            var logger = new NullLogger<PdfController>();
+            var pdfController = new PdfController(pdfService,logger);
 
             Console.Write("Enter the number of beliefs to generate: ");
             var numberOfBeliefs = int.Parse(Console.ReadLine());
 
             var mockBeliefs = CreateMockBeliefs(numberOfBeliefs);
 
-            var result = pdfController.CreatePdf(mockBeliefs);
+            var result = await pdfController.CreatePdf(mockBeliefs);
 
             if (result is FileContentResult fileResult)
             {
