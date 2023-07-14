@@ -1,5 +1,4 @@
-﻿@page "/pdfviewer/{EncodedPdfUrl}"
-@inject HttpClient Http
+﻿@page "/pdfviewer"
 @using Telerik.Blazor.Components.PdfViewer
 @using Telerik.Blazor.Components
 
@@ -13,29 +12,18 @@ else if (PdfData != null)
 }
 
 @code {
-    [Parameter]
-    public string EncodedPdfUrl { get; set; }
-
-    public string PdfUrl { get; set; }
+    [Inject] IJSRuntime JSRuntime { get; set; }
     public byte[] PdfData { get; set; }
-    public bool isLoading { get; set; } = true;
+    bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
-        // URL decode the received parameter to get the original PDF URL
-        PdfUrl = Uri.UnescapeDataString(EncodedPdfUrl);
-
-        // Fetch the PDF data from the URL
-        HttpResponseMessage response = await Http.GetAsync(PdfUrl);
-        if (response.IsSuccessStatusCode)
+        var pdfBase64 = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "pdfData");
+        if (!string.IsNullOrEmpty(pdfBase64))
         {
-            PdfData = await response.Content.ReadAsByteArrayAsync();
+            PdfData = Convert.FromBase64String(pdfBase64);
         }
-        else
-        {
-            PdfData = null;
-        }
-
         isLoading = false;
     }
+
 }

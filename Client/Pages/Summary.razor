@@ -59,21 +59,22 @@
 
 @if (GridData != null)
 {
-<TelerikGrid Data=@GridData Pageable="true" Sortable="true"
-             FilterMode="GridFilterMode.FilterMenu" Resizable="true" Reorderable="true">
-    <GridToolBarTemplate>
-        <GridCommandButton Command="ExcelExport" Icon="@SvgIcon.FileExcel">Export to Excel</GridCommandButton>
-    </GridToolBarTemplate>
-    <GridExport>
-        <GridExcelExport FileName="summary-grid-export" AllPages="true" />
-    </GridExport>
-    <GridColumns>
+    <TelerikGrid Data=@GridData Pageable="true" Sortable="true"
+                 FilterMode="GridFilterMode.FilterMenu" Resizable="true" Reorderable="true" PageSize="25">
+        <GridToolBarTemplate>
+            <GridCommandButton Command="ExcelExport" Icon="@SvgIcon.FileExcel">Export to Excel</GridCommandButton>
+        </GridToolBarTemplate>
+        <GridExport>
+            <GridExcelExport FileName="summary-grid-export" AllPages="true" />
+        </GridExport>
+        <GridColumns>
             <GridColumn Field="@nameof(GridDataRow.Positivity)" Title="Positivity" Width="5%" OnCellRender="@OnCellRenderHandler" />
             <GridColumn Field="@nameof(GridDataRow.Icon)" Title="" Width="5%" />
-        <GridColumn Field="@nameof(GridDataRow.Belief)" Title="Belief" Width="60%"/>
-        <GridColumn Field="@nameof(GridDataRow.SelectedValueText)" Title="Response" Width="30%"/>
-    </GridColumns>
-</TelerikGrid>
+            <GridColumn Field="@nameof(GridDataRow.Belief)" Title="Belief" Width="60%" />
+            <GridColumn Field="@nameof(GridDataRow.SelectedValueText)" Title="Response" Width="30%" />
+        </GridColumns>
+    </TelerikGrid>
+
 
 
     <br/>
@@ -144,22 +145,16 @@ else
 
             if (response.IsSuccessStatusCode)
             {
-                var pdfCreationResult = await response.Content.ReadFromJsonAsync<PdfCreationResult>();
-                _logger.LogInformation($"PDF generation result: Success: {pdfCreationResult.Success}, Message: {pdfCreationResult.Message}");
-
-                if (pdfCreationResult.Success)
+                var stream = await response.Content.ReadAsStreamAsync();
+                byte[] pdfBytes;
+                using (var memoryStream = new MemoryStream())
                 {
-                    _logger.LogInformation($"PDF generation successful. PDF URL: {pdfCreationResult.Url}");
-                    var encodedPdfUrl = Uri.EscapeDataString(pdfCreationResult.Url);
-                    NavManager.NavigateTo($"/pdfviewer/{encodedPdfUrl}");
+                    await stream.CopyToAsync(memoryStream);
+                    pdfBytes = memoryStream.ToArray();
                 }
-                else
-                {
-                    // Error handling when PDF generation fails
-                    var errorMessage = $"Failed to generate PDF. Message: {pdfCreationResult.Message}";
-                    _logger.LogError(errorMessage);
-                    // Display an error message to the user or try to recover from the error appropriately
-                }
+                var pdfBase64 = Convert.ToBase64String(pdfBytes);
+                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "pdfData", pdfBase64);
+                NavManager.NavigateTo("/pdfviewer");
             }
             else
             {
