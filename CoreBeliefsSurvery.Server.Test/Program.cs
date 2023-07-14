@@ -43,7 +43,7 @@ namespace PdfGenerationTest
                 {
                     Belief = new CoreBelief
                     {
-                        BeliefName = $"Mock Belief {beliefIndex + 1} Mock Belief {beliefIndex + 1} Mock Belief {beliefIndex + 1} Mock Belief {beliefIndex + 1} Mock Belief {beliefIndex + 1}",
+                        BeliefName = $"Mock Belief {beliefIndex + 1} Mock Belief {beliefIndex + 1} Mock Belief {beliefIndex + 1}",
                         BeliefDescription = $"This is a description for Mock Belief {beliefIndex + 1}."
                     },
                     SelectedValue = beliefIndex % 5 + 1
