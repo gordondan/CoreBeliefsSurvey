@@ -34,6 +34,7 @@ var appSettings = new AppSettings { DefaultConnectionString = connectionString, 
 // Add services to the container.
 builder.Services.AddSingleton(appSettings); // Inject AppSettings
 builder.Services.AddSingleton<BeliefService>();
+builder.Services.AddTransient<PdfService>();
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
