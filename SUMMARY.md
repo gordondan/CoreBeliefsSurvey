@@ -1,6 +1,13 @@
 # Table of contents
 
-* [Client](README.md)
-  * [wwwroot](Client/wwwroot/README.md)
-    * [css](Client/wwwroot/css/README.md)
-      * [Open Iconic v1.1.1](Client/wwwroot/css/open-iconic/README.md)
+* [👋 Core Beliefs Survey](README.md)
+* [Project Location](project-location.md)
+
+## Technology
+
+* [🛠 Methodology](technology/methodology.md)
+
+## Use Cases
+
+* [🎨 For Designers](use-cases/for-designers.md)
+* [🖥 For Developers](use-cases/for-developers.md)
