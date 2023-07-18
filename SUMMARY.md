@@ -9,7 +9,11 @@
 
 * [🛠 Methodology](technology/methodology.md)
 
-## Use Cases
+## Future Work
 
-* [🎨 For Designers](use-cases/for-designers.md)
-* [🖥 For Developers](use-cases/for-developers.md)
+* [🕷 Known Bugs](future-work/known-bugs.md)
+* [🎁 Future Enhancements](future-work/future-enhancements.md)
+
+## Summary
+
+* [📄 Summary](summary/summary.md)
