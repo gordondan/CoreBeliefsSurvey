@@ -2,7 +2,7 @@
 description: A small application to look at Blazor, Telerik and Azure web services.
 ---
 
-# 👋 Core Beliefs Survey
+# 🌳 Core Beliefs Survey
 
 {% hint style="info" %}
 **Dan Gordon July 18, 2023**

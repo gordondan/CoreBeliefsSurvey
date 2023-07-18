@@ -1,7 +1,9 @@
 # Table of contents
 
-* [👋 Core Beliefs Survey](README.md)
-* [Project Location](project-location.md)
+## Overview
+
+* [🌳 Core Beliefs Survey](README.md)
+* [📂 Project Location](overview/project-location.md)
 
 ## Technology
 
