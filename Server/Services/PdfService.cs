@@ -55,7 +55,7 @@ namespace CoreBeliefsSurvey.Server.Services
                 renderedBytes = ms.ToArray();
             }
 
-            return renderedBytes; // this should return the bytes, not a FileStreamResult
+            return renderedBytes;
         }
 
 
